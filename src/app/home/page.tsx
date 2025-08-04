@@ -16,6 +16,7 @@ import {
   Play,
   Pause,
   CheckCircle,
+  Utensils,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -161,6 +162,10 @@ export default function HomePage() {
     router.push("/profile");
   };
 
+  const handleDiet = () => {
+    router.push("/diet");
+  };
+
   // 로딩 중일 때 로딩 화면 표시
   if (isLoading) {
     return (
@@ -218,6 +223,18 @@ export default function HomePage() {
                 <User className="h-5 w-5" />
                 <span className="hidden sm:inline text-sm font-medium">
                   프로필
+                </span>
+              </button>
+
+              {/* 식단관리 버튼 */}
+              <button
+                onClick={handleDiet}
+                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all duration-200"
+                title="식단 추천"
+              >
+                <Utensils className="h-5 w-5" />
+                <span className="hidden sm:inline text-sm font-medium">
+                  식단관리
                 </span>
               </button>
 
