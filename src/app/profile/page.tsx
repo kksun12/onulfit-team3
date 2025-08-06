@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Trash2 } from "lucide-react";
 
 const GENDER_OPTIONS = [
   { value: "male", label: "남성" },
@@ -17,6 +18,7 @@ const ACTIVITY_LEVELS = [
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const router = useRouter();
@@ -163,6 +165,36 @@ export default function ProfilePage() {
       setError("저장 중 오류가 발생했습니다.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!confirm("정말로 회원탈퇴를 하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+      return;
+    }
+    
+    setDeleting(true);
+    setError("");
+    
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        setError("로그인이 필요합니다.");
+        return;
+      }
+
+      // 프로필 데이터 삭제
+      await supabase.from("user_profiles").delete().eq("id", user.id);
+      
+      // 로그아웃
+      await supabase.auth.signOut();
+      
+      alert("회원탈퇴가 완료되었습니다.");
+      router.push("/");
+    } catch (e) {
+      setError("회원탈퇴 중 오류가 발생했습니다.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -352,6 +384,19 @@ export default function ProfilePage() {
             {saving ? "저장 중..." : "저장하기"}
           </button>
         </form>
+        
+        {/* 회원탈퇴 버튼 */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={handleDeleteAccount}
+            disabled={deleting}
+            className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            {deleting ? "탈퇴 처리 중..." : "회원탈퇴"}
+          </button>
+        </div>
       </div>
     </div>
   );

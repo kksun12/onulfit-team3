@@ -102,9 +102,9 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // 로그인 상태 확인
+  // 로그인 상태 확인 및 프로필 체크
   useEffect(() => {
-    const checkAuthStatus = async () => {
+    const checkAuthAndProfile = async () => {
       try {
         const {
           data: { user },
@@ -114,6 +114,20 @@ export default function HomePage() {
         if (user && !error) {
           setIsLoggedIn(true);
           setUserName(user.user_metadata?.name || user.email || "사용자");
+          
+          // 프로필 정보 확인
+          const { data: profileData, error: profileError } = await supabase
+            .from("user_profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+            
+          // 프로필이 없거나 필수 정보가 비어있으면 프로필 페이지로 이동
+          if (!profileData || !profileData.gender || !profileData.birth_date || 
+              !profileData.height_cm || !profileData.weight_kg) {
+            router.push("/profile");
+            return;
+          }
         } else {
           setIsLoggedIn(false);
           setUserName("사용자");
@@ -126,7 +140,7 @@ export default function HomePage() {
       }
     };
 
-    checkAuthStatus();
+    checkAuthAndProfile();
 
     // Supabase 인증 상태 변경 감지
     const {
@@ -137,6 +151,19 @@ export default function HomePage() {
         setUserName(
           session.user.user_metadata?.name || session.user.email || "사용자"
         );
+        
+        // OAuth 로그인 후 프로필 체크
+        const { data: profileData, error: profileError } = await supabase
+          .from("user_profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+          
+        if (!profileData || !profileData.gender || !profileData.birth_date || 
+            !profileData.height_cm || !profileData.weight_kg) {
+          router.push("/profile");
+          return;
+        }
       } else if (event === "SIGNED_OUT") {
         setIsLoggedIn(false);
         setUserName("사용자");
@@ -145,7 +172,7 @@ export default function HomePage() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [router]);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("ko-KR", {
