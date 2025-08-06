@@ -16,7 +16,7 @@ export default function WelcomeSection({
       {/* 환영 메시지 */}
       <div className="mb-10">
         <h2 className="text-3xl font-bold text-gray-800 mb-3">
-          {isAuthenticated ? `${userName}님, 안녕하세요! 👋` : "안녕하세요! 👋"}
+          {isAuthenticated && userName ? `${userName}님, 안녕하세요! 👋` : "안녕하세요! 👋"}
         </h2>
         <p className="text-lg text-gray-600 leading-relaxed">
           {isAuthenticated

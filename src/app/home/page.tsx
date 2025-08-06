@@ -49,7 +49,7 @@ export default function HomePage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState("사용자");
+  const [userName, setUserName] = useState("");
   const router = useRouter();
 
   const {
@@ -179,7 +179,7 @@ export default function HomePage() {
         
         if (user && !error) {
           setIsLoggedIn(true);
-          setUserName(user.user_metadata?.name || user.email || "사용자");
+          setUserName(user.user_metadata?.name || user.email || "");
         } else {
           // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
           router.replace("/");
