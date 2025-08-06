@@ -129,8 +129,9 @@ export default function HomePage() {
             return;
           }
         } else {
-          setIsLoggedIn(false);
-          setUserName("사용자");
+          // 로그인되지 않은 사용자를 로그인 페이지로 리다이렉트
+          router.push("/");
+          return;
         }
       } catch (error) {
         console.error("Auth check error:", error);
@@ -165,8 +166,9 @@ export default function HomePage() {
           return;
         }
       } else if (event === "SIGNED_OUT") {
-        setIsLoggedIn(false);
-        setUserName("사용자");
+        // 로그아웃 시 로그인 페이지로 리다이렉트
+        router.push("/");
+        return;
       }
       setIsLoading(false);
     });
@@ -251,6 +253,11 @@ export default function HomePage() {
         </div>
       </div>
     );
+  }
+
+  // 로그인되지 않은 사용자는 로그인 페이지로 리다이렉트
+  if (!isLoggedIn) {
+    return null; // 리다이렉트 중에는 아무것도 렌더링하지 않음
   }
 
   return (
