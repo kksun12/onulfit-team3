@@ -4,187 +4,100 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Utensils, Target, Clock, Heart, Zap } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { HealthSolutionService } from "@/services/healthSolutionService";
+import { SolutionMealWithMeal } from "@/types/database";
+import { useUserStore } from "@/stores/userStore";
 
-interface DietRecommendation {
-  id: string;
-  mealType: string;
-  title: string;
-  description: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  ingredients: string[];
-  instructions: string[];
-  image?: string;
+interface MealsByTime {
+  [key: string]: SolutionMealWithMeal[];
 }
 
 export default function DietPage() {
   const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [recommendations, setRecommendations] = useState<DietRecommendation[]>(
-    []
-  );
-  const [selectedMeal, setSelectedMeal] = useState<string>("breakfast");
+  const [mealsByTime, setMealsByTime] = useState<MealsByTime>({});
+  const [selectedMeal, setSelectedMeal] = useState<string>("아침");
+  const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay());
   const router = useRouter();
+  const { user, userProfile, fetchUser, isAuthenticated } = useUserStore();
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const initializeData = async () => {
+      if (!isAuthenticated) {
+        await fetchUser();
+      }
+    };
+    initializeData();
+  }, [isAuthenticated, fetchUser]);
+
+  useEffect(() => {
+    const fetchMealsData = async () => {
+      if (!user) {
+        router.push("/");
+        return;
+      }
+
       try {
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser();
-        if (error || !user) {
-          router.push("/");
-          return;
+        setLoading(true);
+        // 건강 솔루션 식단 데이터 가져오기
+        const meals = await HealthSolutionService.getSolutionMeals(user.id);
+        
+        // 식사 시간별로 그룹화
+        const groupedMeals: MealsByTime = {};
+        meals.forEach(meal => {
+          const mealTime = meal.meal_time || "기타";
+          if (!groupedMeals[mealTime]) {
+            groupedMeals[mealTime] = [];
+          }
+          groupedMeals[mealTime].push(meal);
+        });
+        
+        setMealsByTime(groupedMeals);
+        
+        // 첫 번째 식사 시간을 기본 선택으로 설정
+        const firstMealTime = Object.keys(groupedMeals)[0];
+        if (firstMealTime) {
+          setSelectedMeal(firstMealTime);
         }
-
-        // 사용자 프로필 정보 가져오기
-        const { data: profileData } = await supabase
-          .from("user_profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        setUserProfile(profileData);
-
-        // 프로필 정보를 기반으로 식단 추천 생성
-        generateDietRecommendations(profileData);
       } catch (error) {
-        console.error("Error fetching profile:", error);
+        console.error("Error fetching meals data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserProfile();
-  }, [router]);
-
-  const generateDietRecommendations = (profile: any) => {
-    // 프로필 정보를 기반으로 개인화된 식단 추천
-    const userGoal = profile?.diet_type || "건강유지";
-    const userWeight = profile?.weight_kg || 70;
-    const userHeight = profile?.height_cm || 170;
-    const userActivity = profile?.activity_level || "3-4";
-
-    // 목표에 따른 칼로리 계산
-    let dailyCalories = 2000; // 기본값
-    if (userGoal === "체중감량") {
-      dailyCalories = Math.round(userWeight * 25 * 0.8); // 체중감량을 위한 칼로리
-    } else if (userGoal === "근육증가") {
-      dailyCalories = Math.round(userWeight * 25 * 1.2); // 근육증가를 위한 칼로리
+    if (user) {
+      fetchMealsData();
     }
+  }, [user, router]);
 
-    const mealRecommendations: DietRecommendation[] = [
-      {
-        id: "1",
-        mealType: "breakfast",
-        title: "단백질 풍부한 아침 식사",
-        description: "근육 회복과 에너지 공급을 위한 균형 잡힌 아침 식사",
-        calories: Math.round(dailyCalories * 0.25),
-        protein: 25,
-        carbs: 45,
-        fat: 15,
-        ingredients: [
-          "오트밀 1컵",
-          "바나나 1개",
-          "그릭요거트 1/2컵",
-          "견과류 1/4컵",
-          "꿀 1큰술",
-        ],
-        instructions: [
-          "오트밀을 우유와 함께 끓여주세요",
-          "바나나를 슬라이스하여 추가합니다",
-          "그릭요거트와 견과류를 올려주세요",
-          "꿀을 뿌려 완성합니다",
-        ],
-      },
-      {
-        id: "2",
-        mealType: "lunch",
-        title: "건강한 점심 식사",
-        description: "오후 활동을 위한 충분한 영양소가 포함된 점심",
-        calories: Math.round(dailyCalories * 0.35),
-        protein: 35,
-        carbs: 50,
-        fat: 20,
-        ingredients: [
-          "현미밥 1공기",
-          "닭가슴살 150g",
-          "브로콜리 1컵",
-          "당근 1/2개",
-          "올리브오일 1큰술",
-        ],
-        instructions: [
-          "닭가슴살을 올리브오일로 구워주세요",
-          "브로콜리와 당근을 찜기에서 찝니다",
-          "현미밥과 함께 담아 완성합니다",
-        ],
-      },
-      {
-        id: "3",
-        mealType: "dinner",
-        title: "가벼운 저녁 식사",
-        description: "수면 전 소화가 잘 되는 가벼운 저녁 식사",
-        calories: Math.round(dailyCalories * 0.25),
-        protein: 20,
-        carbs: 30,
-        fat: 10,
-        ingredients: [
-          "연어 120g",
-          "퀴노아 1/2컵",
-          "시금치 2컵",
-          "체리토마토 1/2컵",
-          "레몬즙 1큰술",
-        ],
-        instructions: [
-          "연어를 레몬즙과 함께 구워주세요",
-          "퀴노아를 삶아주세요",
-          "시금치와 체리토마토를 섞어 샐러드를 만듭니다",
-          "모든 재료를 함께 담아 완성합니다",
-        ],
-      },
-      {
-        id: "4",
-        mealType: "snack",
-        title: "건강한 간식",
-        description: "운동 전후 또는 간식 시간을 위한 영양 간식",
-        calories: Math.round(dailyCalories * 0.15),
-        protein: 15,
-        carbs: 25,
-        fat: 8,
-        ingredients: [
-          "아몬드 1/4컵",
-          "사과 1개",
-          "그릭요거트 1/2컵",
-          "꿀 1작은술",
-        ],
-        instructions: [
-          "사과를 썰어주세요",
-          "그릭요거트에 꿀을 섞어주세요",
-          "아몬드와 함께 담아 완성합니다",
-        ],
-      },
-    ];
-
-    setRecommendations(mealRecommendations);
+  const getDayName = (dayIndex: number) => {
+    const days = ["일", "월", "화", "수", "목", "금", "토"];
+    return days[dayIndex];
   };
 
-  const getMealTypeLabel = (mealType: string) => {
-    switch (mealType) {
-      case "breakfast":
-        return "아침";
-      case "lunch":
-        return "점심";
-      case "dinner":
-        return "저녁";
-      case "snack":
-        return "간식";
-      default:
-        return mealType;
-    }
+  const getCurrentDayMeals = () => {
+    const selectedMeals = mealsByTime[selectedMeal] || [];
+    return selectedMeals.filter(meal => meal.meal_day === selectedDay);
   };
+
+  const getNutrientValue = (meal: SolutionMealWithMeal, nutrient: string): number => {
+    return meal.meal?.nutrients?.[nutrient] || 0;
+  };
+
+  const getTotalNutrients = () => {
+    const currentMeals = getCurrentDayMeals();
+    return currentMeals.reduce((total, meal) => {
+      const nutrients = meal.meal?.nutrients || {};
+      return {
+        calories: total.calories + (nutrients["칼로리"] || 0),
+        protein: total.protein + (nutrients["단백질"] || 0),
+        carbs: total.carbs + (nutrients["탄수화물"] || 0),
+        fat: total.fat + (nutrients["지방"] || 0)
+      };
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+  };
+
+
 
   const getGoalColor = (goal: string) => {
     switch (goal) {
@@ -274,114 +187,161 @@ export default function DietPage() {
           </div>
         )}
 
+        {/* 요일 선택 */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">요일 선택</h3>
+          <div className="flex flex-wrap gap-2">
+            {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => (
+              <button
+                key={dayIndex}
+                onClick={() => setSelectedDay(dayIndex)}
+                className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  selectedDay === dayIndex
+                    ? "bg-blue-600 text-white shadow-lg"
+                    : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
+                }`}
+              >
+                {getDayName(dayIndex)}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* 식사 타입 선택 */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
             식사 선택
           </h3>
           <div className="flex flex-wrap gap-3">
-            {["breakfast", "lunch", "dinner", "snack"].map((mealType) => (
+            {Object.keys(mealsByTime).map((mealTime) => (
               <button
-                key={mealType}
-                onClick={() => setSelectedMeal(mealType)}
+                key={mealTime}
+                onClick={() => setSelectedMeal(mealTime)}
                 className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
-                  selectedMeal === mealType
+                  selectedMeal === mealTime
                     ? "bg-blue-600 text-white shadow-lg"
                     : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                 }`}
               >
-                {getMealTypeLabel(mealType)}
+                {mealTime}
               </button>
             ))}
           </div>
         </div>
 
-        {/* 추천 식단 */}
+        {/* 영양소 요약 */}
+        {getCurrentDayMeals().length > 0 && (
+          <div className="mb-8 p-6 bg-white rounded-2xl shadow-lg border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              {getDayName(selectedDay)}요일 {selectedMeal} 영양소 요약
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-3 bg-blue-50 rounded-xl">
+                <div className="text-lg font-bold text-blue-600">
+                  {getTotalNutrients().calories.toFixed(0)} kcal
+                </div>
+                <div className="text-sm text-gray-600">칼로리</div>
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-xl">
+                <div className="text-lg font-bold text-green-600">
+                  {getTotalNutrients().protein.toFixed(1)}g
+                </div>
+                <div className="text-sm text-gray-600">단백질</div>
+              </div>
+              <div className="text-center p-3 bg-yellow-50 rounded-xl">
+                <div className="text-lg font-bold text-yellow-600">
+                  {getTotalNutrients().carbs.toFixed(1)}g
+                </div>
+                <div className="text-sm text-gray-600">탄수화물</div>
+              </div>
+              <div className="text-center p-3 bg-red-50 rounded-xl">
+                <div className="text-lg font-bold text-red-600">
+                  {getTotalNutrients().fat.toFixed(1)}g
+                </div>
+                <div className="text-sm text-gray-600">지방</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 식단 목록 */}
         <div className="space-y-6">
-          {recommendations
-            .filter((rec) => rec.mealType === selectedMeal)
-            .map((recommendation) => (
+          {getCurrentDayMeals().length > 0 ? (
+            getCurrentDayMeals().map((mealItem) => (
               <div
-                key={recommendation.id}
+                key={mealItem.id}
                 className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
               >
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <h3 className="text-xl font-bold text-gray-800 mb-2">
-                        {recommendation.title}
+                        {mealItem.meal?.name || "식단 정보 없음"}
                       </h3>
                       <p className="text-gray-600 mb-4">
-                        {recommendation.description}
+                        {mealItem.meal?.description || "설명이 없습니다."}
                       </p>
+                      {mealItem.portion_size && (
+                        <p className="text-sm text-blue-600 font-medium">
+                          권장량: {mealItem.portion_size}인분
+                        </p>
+                      )}
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-blue-600">
-                        {recommendation.calories} kcal
+                        {getNutrientValue(mealItem, "칼로리").toFixed(0)} kcal
                       </div>
-                      <div className="text-sm text-gray-500">총 칼로리</div>
+                      <div className="text-sm text-gray-500">칼로리</div>
                     </div>
                   </div>
 
                   {/* 영양소 정보 */}
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="text-center p-3 bg-blue-50 rounded-xl">
-                      <div className="text-lg font-bold text-blue-600">
-                        {recommendation.protein}g
-                      </div>
-                      <div className="text-sm text-gray-600">단백질</div>
-                    </div>
-                    <div className="text-center p-3 bg-green-50 rounded-xl">
-                      <div className="text-lg font-bold text-green-600">
-                        {recommendation.carbs}g
-                      </div>
-                      <div className="text-sm text-gray-600">탄수화물</div>
-                    </div>
-                    <div className="text-center p-3 bg-yellow-50 rounded-xl">
-                      <div className="text-lg font-bold text-yellow-600">
-                        {recommendation.fat}g
-                      </div>
-                      <div className="text-sm text-gray-600">지방</div>
-                    </div>
-                  </div>
-
-                  {/* 재료 */}
-                  <div className="mb-6">
-                    <h4 className="text-lg font-semibold text-gray-800 mb-3">
-                      재료
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {recommendation.ingredients.map((ingredient, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center space-x-2"
-                        >
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="text-gray-700">{ingredient}</span>
+                  {mealItem.meal?.nutrients && (
+                    <div className="grid grid-cols-3 gap-4 mb-6">
+                      <div className="text-center p-3 bg-blue-50 rounded-xl">
+                        <div className="text-lg font-bold text-blue-600">
+                          {getNutrientValue(mealItem, "단백질").toFixed(1)}g
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* 조리 방법 */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-800 mb-3">
-                      조리 방법
-                    </h4>
-                    <div className="space-y-2">
-                      {recommendation.instructions.map((instruction, index) => (
-                        <div key={index} className="flex items-start space-x-3">
-                          <div className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                            {index + 1}
-                          </div>
-                          <span className="text-gray-700">{instruction}</span>
+                        <div className="text-sm text-gray-600">단백질</div>
+                      </div>
+                      <div className="text-center p-3 bg-green-50 rounded-xl">
+                        <div className="text-lg font-bold text-green-600">
+                          {getNutrientValue(mealItem, "탄수화물").toFixed(1)}g
                         </div>
-                      ))}
+                        <div className="text-sm text-gray-600">탄수화물</div>
+                      </div>
+                      <div className="text-center p-3 bg-yellow-50 rounded-xl">
+                        <div className="text-lg font-bold text-yellow-600">
+                          {getNutrientValue(mealItem, "지방").toFixed(1)}g
+                        </div>
+                        <div className="text-sm text-gray-600">지방</div>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* 추가 정보 */}
+                  {mealItem.notes && (
+                    <div className="mt-4 p-3 bg-gray-50 rounded-xl">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                        메모
+                      </h4>
+                      <p className="text-gray-600 text-sm">{mealItem.notes}</p>
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
+            ))
+          ) : (
+            <div className="text-center py-12">
+              <Utensils className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                등록된 식단이 없습니다
+              </h3>
+              <p className="text-gray-500">
+                {getDayName(selectedDay)}요일 {selectedMeal}에 대한 식단이 없습니다.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 추가 정보 */}
