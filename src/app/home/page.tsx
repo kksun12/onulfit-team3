@@ -171,87 +171,59 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // 로그인 상태 확인 및 프로필 체크
+  // 로그인 상태 확인
   useEffect(() => {
-    const checkAuthAndProfile = async () => {
+    const checkAuth = async () => {
       try {
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser();
-
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
         if (user && !error) {
           setIsLoggedIn(true);
           setUserName(user.user_metadata?.name || user.email || "사용자");
-          
-          // 프로필 정보 확인
-          const { data: profileData, error: profileError } = await supabase
-            .from("user_profiles")
-            .select("*")
-            .eq("id", user.id)
-            .single();
-            
-          // 프로필이 없거나 필수 정보가 비어있으면 프로필 페이지로 이동
-          if (!profileData || !profileData.gender || !profileData.birth_date || 
-              !profileData.height_cm || !profileData.weight_kg) {
-            router.push("/profile");
-            return;
-          }
         } else {
-          // 로그인되지 않은 사용자를 로그인 페이지로 리다이렉트
-          router.push("/");
+          // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
+          router.replace("/");
           return;
         }
       } catch (error) {
-        console.error("Auth check error:", error);
-        setIsLoggedIn(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuthAndProfile();
-
-    // Supabase 인증 상태 변경 감지
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        setIsLoggedIn(true);
-        setUserName(
-          session.user.user_metadata?.name || session.user.email || "사용자"
-        );
-        
-        // OAuth 로그인 후 프로필 체크
-        const { data: profileData, error: profileError } = await supabase
-          .from("user_profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
-          
-        if (!profileData || !profileData.gender || !profileData.birth_date || 
-            !profileData.height_cm || !profileData.weight_kg) {
-          router.push("/profile");
-          return;
-        }
-      } else if (event === "SIGNED_OUT") {
-        // 로그아웃 시 로그인 페이지로 리다이렉트
-        router.push("/");
+        console.error("Auth error:", error);
+        router.replace("/");
         return;
       }
+      
       setIsLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, [router]);
 
+  // 프로필 체크 및 건강 솔루션 로드
   useEffect(() => {
-    if (isAuthenticated && user && !isLoading) {
-      fetchHealthSolution(user.id);
-    } else if (!isAuthenticated && !isLoading) {
-      setUserSchedule(null);
+    if (isLoggedIn && !isLoading) {
+      const checkProfileAndLoadSolution = async () => {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (user && !error) {
+          // 프로필 정보 확인
+          const { data: profileData } = await supabase
+            .from("user_profiles")
+            .select("*")
+            .eq("id", user.id)
+            .maybeSingle();
+            
+          // 필수 정보가 비어있으면 프로필 페이지로 이동
+          if (!profileData || !profileData.gender || !profileData.birth_date || 
+              !profileData.height_cm || !profileData.weight_kg) {
+            router.replace("/profile");
+            return;
+          }
+          
+          // 프로필이 완성된 경우 건강 솔루션 로드
+          fetchHealthSolution(user.id);
+        }
+      };
+      checkProfileAndLoadSolution();
     }
-  }, [isAuthenticated, user?.id, isLoading, fetchHealthSolution]);
+  }, [isLoggedIn, isLoading, fetchHealthSolution, router]);
 
   const handleLogin = () => {
     router.push("/");
@@ -317,10 +289,7 @@ export default function HomePage() {
     );
   }
 
-  // 로그인되지 않은 사용자는 로그인 페이지로 리다이렉트
-  if (!isLoggedIn) {
-    return null; // 리다이렉트 중에는 아무것도 렌더링하지 않음
-  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
