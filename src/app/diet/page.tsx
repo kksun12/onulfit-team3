@@ -2,23 +2,32 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Utensils, Target, Clock, Heart, Zap } from "lucide-react";
+import { Utensils, Target, Heart, Zap } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { HealthSolutionService } from "@/services/healthSolutionService";
 import { SolutionMealWithMeal } from "@/types/database";
 import { useUserStore } from "@/stores/userStore";
+import Header from "@/components/home/Header";
 
 interface MealsByTime {
   [key: string]: SolutionMealWithMeal[];
 }
 
 export default function DietPage() {
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [mealsByTime, setMealsByTime] = useState<MealsByTime>({});
   const [selectedMeal, setSelectedMeal] = useState<string>("아침");
   const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay());
   const router = useRouter();
   const { user, userProfile, fetchUser, isAuthenticated } = useUserStore();
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -123,32 +132,46 @@ export default function DietPage() {
     );
   }
 
+  const handleLogin = () => {
+    router.push("/");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      router.push("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  const handleSettings = () => {
+    router.push("/profile");
+  };
+
+  const handleDiet = () => {
+    // 이미 식단관리 페이지에 있으므로 아무것도 하지 않음
+  };
+
+  const handleHome = () => {
+    router.push("/home");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* 헤더 */}
-      <header className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.back()}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all duration-200"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <Utensils className="h-6 w-6 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold text-gray-800">식단 관리</h1>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header
+        currentTime={currentTime}
+        isAuthenticated={isAuthenticated}
+        userName={user?.user_metadata?.name || user?.email || ""}
+        onLogin={handleLogin}
+        onLogout={handleLogout}
+        onSettings={handleSettings}
+        onDiet={handleDiet}
+        onHome={handleHome}
+      />
 
-      {/* 메인 콘텐츠 */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+
+      <main className="w-full px-8 py-8">
         {/* 사용자 정보 및 목표 */}
         {userProfile && (
           <div className="mb-8 p-6 bg-white rounded-2xl shadow-lg border border-gray-100">
