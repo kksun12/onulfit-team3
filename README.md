@@ -145,6 +145,76 @@ src/
 - [ ] 소셜 기능
 - [ ] 다크 모드
 
+## 📡 API 명세
+
+### 인증 API
+
+| 기능 | Method | URL | Request Body | Response |
+|------|--------|-----|--------------|----------|
+| 로그인 | POST | `/auth/login` | `{ email: string, password: string }` | `{ user: User, session: Session }` |
+| 회원가입 | POST | `/auth/signup` | `{ email: string, password: string, name?: string }` | `{ user: User, session: Session }` |
+
+### 프로필 API
+
+| 기능 | Method | URL | Headers | Request Body | Response |
+|------|--------|-----|---------|--------------|----------|
+| 프로필 조회 | GET | `/api/profile` | `Authorization: Bearer {token}` | - | `{ profile: UserProfile }` |
+| 프로필 업데이트 | PUT | `/api/profile` | `Authorization: Bearer {token}` | `{ gender, birth_date, height_cm, weight_kg, activity_level, ... }` | `{ success: boolean, profile: UserProfile }` |
+
+### 건강 솔루션 API
+
+| 기능 | Method | URL | Request Body | Query | Response |
+|------|--------|-----|--------------|-------|----------|
+| 솔루션 생성 | POST | `/api/diet-health-insert` | `{ userId: string }` | - | `{ success: boolean, solution: HealthSolution }` |
+| 솔루션 조회 | GET | `/api/health-solution` | - | `userId={userId}` | `{ solution: HealthSolutionWithDetails }` |
+| 운동 계획 조회 | GET | `/api/workouts` | - | `userId={userId}` | `{ workouts: SolutionWorkout[] }` |
+| 식단 계획 조회 | GET | `/api/meals` | - | `userId={userId}` | `{ meals: SolutionMeal[] }` |
+
+### AI 채팅 API
+
+| 기능 | Method | URL | Request Body | Response |
+|------|--------|-----|--------------|----------|
+| 채팅 메시지 전송 | POST | `/api/diet-health-chat` | `{ messages: Message[], userId: string }` | `{ success: boolean, rspData: string }` |
+
+### 완료 상태 API
+
+| 기능 | Method | URL | Request Body | Query | Response |
+|------|--------|-----|--------------|-------|----------|
+| 운동 완료 처리 | POST | `/api/completion/workout` | `{ userId: string, workoutId: string, completed: boolean }` | - | `{ success: boolean }` |
+| 식단 완료 처리 | POST | `/api/completion/meal` | `{ userId: string, mealId: string, completed: boolean }` | - | `{ success: boolean }` |
+| 완료 상태 조회 | GET | `/api/completion` | - | `userId={userId}&type={workout\|meal}` | `{ completedItems: string[] }` |
+
+### 데이터 타입
+
+```typescript
+interface UserProfile {
+  id: string;
+  email: string;
+  name?: string;
+  gender: 'male' | 'female';
+  birth_date: string;
+  height_cm: number;
+  weight_kg: number;
+  activity_level: string;
+  preferred_workout_time: string;
+  available_days: string[];
+  diet_type: string;
+}
+
+interface HealthSolution {
+  id: string;
+  user_id: string;
+  week_start_date: string;
+  goal: string;
+  created_at: string;
+}
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+```
+
 ## 📄 라이선스
 
 MIT License
