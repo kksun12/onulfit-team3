@@ -104,7 +104,7 @@ export default function ChatPage() {
         {
           role: "assistant",
           content: `❌ 오류 발생: ${
-            err?.response?.data?.message || err.message
+            (err as any)?.response?.data?.message || (err as any).message
           }`,
         },
       ]);
