@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-interface User {
+interface AppUser {
   id: string;
   email: string;
   user_metadata?: {
@@ -24,7 +25,7 @@ interface UserProfile {
 }
 
 interface UserState {
-  user: User | null;
+  user: AppUser | null;
   userProfile: UserProfile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -49,8 +50,13 @@ export const useUserStore = create<UserState>((set, get) => ({
       } = await supabase.auth.getUser();
 
       if (user && !error) {
+        const appUser: AppUser = {
+          id: user.id,
+          email: user.email || '',
+          user_metadata: user.user_metadata,
+        };
         set({
-          user: user as User,
+          user: appUser,
           isAuthenticated: true,
           isLoading: false,
         });
