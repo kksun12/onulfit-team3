@@ -50,7 +50,7 @@ export const useUserStore = create<UserState>((set, get) => ({
 
       if (user && !error) {
         set({
-          user,
+          user: user as User,
           isAuthenticated: true,
           isLoading: false,
         });
