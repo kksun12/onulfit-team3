@@ -1,4 +1,10 @@
-import { Activity, User, Utensils, LogOut, LogIn } from "lucide-react";
+import {
+  Activity,
+  User,
+  Utensils,
+  LogOut,
+  LogIn,
+} from "lucide-react";
 
 interface HeaderProps {
   currentTime: Date;
@@ -43,7 +49,7 @@ export default function Header({
       <div className="w-full px-8 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-8">
-            <button 
+            <button
               onClick={onHome}
               className="flex items-center hover:opacity-80 transition-opacity"
             >
@@ -52,7 +58,7 @@ export default function Header({
               </div>
               <h1 className="ml-3 text-xl font-bold text-gray-800">OnulFit</h1>
             </button>
-            
+
             <nav className="flex items-center space-x-6">
               <button
                 onClick={onSettings}
@@ -61,7 +67,7 @@ export default function Header({
                 <User className="h-4 w-4" />
                 <span className="text-sm font-medium">프로필</span>
               </button>
-              
+
               <button
                 onClick={onDiet}
                 className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
@@ -69,6 +75,8 @@ export default function Header({
                 <Utensils className="h-4 w-4" />
                 <span className="text-sm font-medium">식단관리</span>
               </button>
+
+
             </nav>
           </div>
 

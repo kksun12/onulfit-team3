@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-interface User {
+interface AppUser {
   id: string;
   email: string;
   user_metadata?: {
@@ -24,7 +25,7 @@ interface UserProfile {
 }
 
 interface UserState {
-  user: User | null;
+  user: AppUser | null;
   userProfile: UserProfile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -32,13 +33,112 @@ interface UserState {
   fetchUserProfile: () => Promise<void>;
   signOut: () => Promise<void>;
   clearUser: () => void;
+  initializeAuthListener: () => void;
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
   user: null,
   userProfile: null,
-  isLoading: false,
+  isLoading: true, // 초기값을 true로 설정
   isAuthenticated: false,
+
+  initializeAuthListener: () => {
+    console.log("🚀 Auth listener initialized");
+
+    // Supabase 인증 상태 변화를 실시간으로 감지
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("🔄 Auth state changed:", event, session?.user?.email);
+
+      if (event === "SIGNED_IN" && session?.user) {
+        console.log("✅ User signed in:", session.user.email);
+        const appUser: AppUser = {
+          id: session.user.id,
+          email: session.user.email || "",
+          user_metadata: session.user.user_metadata,
+        };
+        set({
+          user: appUser,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+        // 사용자 프로필도 함께 가져오기
+        await get().fetchUserProfile();
+      } else if (event === "SIGNED_OUT") {
+        console.log("❌ User signed out");
+        set({
+          user: null,
+          userProfile: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
+      } else if (event === "TOKEN_REFRESHED" && session?.user) {
+        console.log("🔄 Token refreshed for user:", session.user.email);
+        const appUser: AppUser = {
+          id: session.user.id,
+          email: session.user.email || "",
+          user_metadata: session.user.user_metadata,
+        };
+        set({
+          user: appUser,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      }
+    });
+
+    // 초기 세션 상태 확인
+    const checkInitialSession = async () => {
+      try {
+        console.log("🔍 Checking initial session...");
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (session?.user && !error) {
+          console.log("✅ Initial session found:", session.user.email);
+          const appUser: AppUser = {
+            id: session.user.id,
+            email: session.user.email || "",
+            user_metadata: session.user.user_metadata,
+          };
+          set({
+            user: appUser,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          // 사용자 프로필도 함께 가져오기
+          await get().fetchUserProfile();
+        } else {
+          console.log("❌ No initial session found");
+          set({
+            user: null,
+            userProfile: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
+        }
+      } catch (error) {
+        console.error("Error checking initial session:", error);
+        set({
+          user: null,
+          userProfile: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
+      }
+    };
+
+    // 초기 세션 확인 실행
+    checkInitialSession();
+
+    // cleanup 함수 반환 (필요시 사용)
+    return () => {
+      subscription?.unsubscribe();
+    };
+  },
 
   fetchUser: async () => {
     set({ isLoading: true });
@@ -49,14 +149,21 @@ export const useUserStore = create<UserState>((set, get) => ({
       } = await supabase.auth.getUser();
 
       if (user && !error) {
+        console.log("✅ User fetched:", user.email);
+        const appUser: AppUser = {
+          id: user.id,
+          email: user.email || "",
+          user_metadata: user.user_metadata,
+        };
         set({
-          user: user as User,
+          user: appUser,
           isAuthenticated: true,
           isLoading: false,
         });
         // 사용자 프로필도 함께 가져오기
         await get().fetchUserProfile();
       } else {
+        console.log("❌ No user found or error:", error);
         set({
           user: null,
           userProfile: null,

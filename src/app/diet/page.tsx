@@ -49,27 +49,28 @@ export default function DietPage() {
         setLoading(true);
         // 건강 솔루션 식단 데이터 가져오기
         const meals = await HealthSolutionService.getSolutionMeals(user.id);
-        
+
         // 식사 시간별로 그룹화
         const groupedMeals: MealsByTime = {};
-        meals.forEach(meal => {
+        meals.forEach((meal) => {
           const mealTime = meal.meal_time || "기타";
           if (!groupedMeals[mealTime]) {
             groupedMeals[mealTime] = [];
           }
           groupedMeals[mealTime].push(meal);
         });
-        
+
         setMealsByTime(groupedMeals);
-        
+
         // 첫 번째 식사 시간을 기본 선택으로 설정
         const firstMealTime = Object.keys(groupedMeals)[0];
         if (firstMealTime) {
           setSelectedMeal(firstMealTime);
         }
       } catch (error) {
-        console.error("Error fetching meals data:", error);
+        console.error("❌ [식단] 식단 데이터 로드 오류:", error);
       } finally {
+        console.log("🏁 [식단] 식단 데이터 로드 완료");
         setLoading(false);
       }
     };
@@ -86,27 +87,31 @@ export default function DietPage() {
 
   const getCurrentDayMeals = () => {
     const selectedMeals = mealsByTime[selectedMeal] || [];
-    return selectedMeals.filter(meal => meal.meal_day === selectedDay);
+    return selectedMeals.filter((meal) => meal.meal_day === selectedDay);
   };
 
-  const getNutrientValue = (meal: SolutionMealWithMeal, nutrient: string): number => {
+  const getNutrientValue = (
+    meal: SolutionMealWithMeal,
+    nutrient: string
+  ): number => {
     return meal.meal?.nutrients?.[nutrient] || 0;
   };
 
   const getTotalNutrients = () => {
     const currentMeals = getCurrentDayMeals();
-    return currentMeals.reduce((total, meal) => {
-      const nutrients = meal.meal?.nutrients || {};
-      return {
-        calories: total.calories + (nutrients["칼로리"] || 0),
-        protein: total.protein + (nutrients["단백질"] || 0),
-        carbs: total.carbs + (nutrients["탄수화물"] || 0),
-        fat: total.fat + (nutrients["지방"] || 0)
-      };
-    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+    return currentMeals.reduce(
+      (total, meal) => {
+        const nutrients = meal.meal?.nutrients || {};
+        return {
+          calories: total.calories + (nutrients["calories"] || 0),
+          protein: total.protein + (nutrients["protein"] || 0),
+          carbs: total.carbs + (nutrients["carbs"] || 0),
+          fat: total.fat + (nutrients["fat"] || 0),
+        };
+      },
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
   };
-
-
 
   const getGoalColor = (goal: string) => {
     switch (goal) {
@@ -157,6 +162,8 @@ export default function DietPage() {
     router.push("/home");
   };
 
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Header
@@ -169,7 +176,6 @@ export default function DietPage() {
         onDiet={handleDiet}
         onHome={handleHome}
       />
-
 
       <main className="w-full px-8 py-8">
         {/* 사용자 정보 및 목표 */}
@@ -212,7 +218,9 @@ export default function DietPage() {
 
         {/* 요일 선택 */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">요일 선택</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            요일 선택
+          </h3>
           <div className="flex flex-wrap gap-2">
             {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => (
               <button
@@ -312,7 +320,7 @@ export default function DietPage() {
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-blue-600">
-                        {getNutrientValue(mealItem, "칼로리").toFixed(0)} kcal
+                        {getNutrientValue(mealItem, "calories").toFixed(0)} kcal
                       </div>
                       <div className="text-sm text-gray-500">칼로리</div>
                     </div>
@@ -323,19 +331,19 @@ export default function DietPage() {
                     <div className="grid grid-cols-3 gap-4 mb-6">
                       <div className="text-center p-3 bg-blue-50 rounded-xl">
                         <div className="text-lg font-bold text-blue-600">
-                          {getNutrientValue(mealItem, "단백질").toFixed(1)}g
+                          {getNutrientValue(mealItem, "protein").toFixed(1)}g
                         </div>
                         <div className="text-sm text-gray-600">단백질</div>
                       </div>
                       <div className="text-center p-3 bg-green-50 rounded-xl">
                         <div className="text-lg font-bold text-green-600">
-                          {getNutrientValue(mealItem, "탄수화물").toFixed(1)}g
+                          {getNutrientValue(mealItem, "carbs").toFixed(1)}g
                         </div>
                         <div className="text-sm text-gray-600">탄수화물</div>
                       </div>
                       <div className="text-center p-3 bg-yellow-50 rounded-xl">
                         <div className="text-lg font-bold text-yellow-600">
-                          {getNutrientValue(mealItem, "지방").toFixed(1)}g
+                          {getNutrientValue(mealItem, "fat").toFixed(1)}g
                         </div>
                         <div className="text-sm text-gray-600">지방</div>
                       </div>
@@ -361,7 +369,8 @@ export default function DietPage() {
                 등록된 식단이 없습니다
               </h3>
               <p className="text-gray-500">
-                {getDayName(selectedDay)}요일 {selectedMeal}에 대한 식단이 없습니다.
+                {getDayName(selectedDay)}요일 {selectedMeal}에 대한 식단이
+                없습니다.
               </p>
             </div>
           )}

@@ -1,5 +1,5 @@
-// components/chat/ChatInputBox.tsx
 import { useRef, useEffect } from "react";
+import { Send, RotateCcw, MessageCircle } from "lucide-react";
 
 interface Props {
   input: string;
@@ -18,7 +18,6 @@ export default function ChatTextarea({
 }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // SQL이 들어오면 자동으로 크기 조정
   useEffect(() => {
     if (textareaRef.current && input.includes("SELECT")) {
       textareaRef.current.style.height = "auto";
@@ -30,7 +29,6 @@ export default function ChatTextarea({
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
 
-    // 오토 리사이즈
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       const newHeight = Math.min(textareaRef.current.scrollHeight, 300);
@@ -38,7 +36,6 @@ export default function ChatTextarea({
     }
   };
 
-  // SQL인지 확인하는 함수
   const isSQL =
     input.includes("SELECT") ||
     input.includes("INSERT") ||
@@ -46,14 +43,14 @@ export default function ChatTextarea({
     input.includes("DELETE");
 
   return (
-    <form onSubmit={handleSend} className="flex flex-col space-y-1">
-      <div className="flex space-x-2 items-end">
+    <form onSubmit={handleSend} className="space-y-4">
+      <div className="relative">
         <textarea
           ref={textareaRef}
-          className={`flex-1 border border-gray-300 rounded px-2 py-1 bg-white shadow-sm resize-none min-h-[2rem] text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+          className={`w-full border-2 border-gray-200 rounded-xl pl-12 pr-4 py-3 bg-white shadow-sm resize-none min-h-[3rem] text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${
             isSQL ? "max-h-80 font-mono text-xs" : "max-h-40"
           }`}
-          placeholder="메시지를 입력하세요"
+          placeholder="운동, 식단, 건강에 대한 질문을 자유롭게 해보세요..."
           value={input}
           onChange={handleInputChange}
           onKeyDown={(e) => {
@@ -72,22 +69,32 @@ export default function ChatTextarea({
             lineHeight: isSQL ? "1.4" : "1.2",
           }}
         />
-        <div className="flex flex-col space-y-1">
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-0.5 rounded shadow text-xs font-medium transition-colors"
-          >
-            전송
-          </button>
-          <button
-            type="button"
-            onClick={onReset}
-            className="w-full px-2 py-0.5 rounded bg-gray-200 hover:bg-red-400 hover:text-white text-gray-700 text-xs font-semibold shadow transition-colors"
-          >
-            대화 초기화
-          </button>
+
+        {/* 입력 아이콘 */}
+        <div className="absolute top-3 left-3 text-gray-400">
+          <MessageCircle className="h-5 w-5" />
         </div>
+      </div>
+
+      {/* 버튼 영역 */}
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={onReset}
+          className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-red-100 hover:text-red-600 text-gray-600 text-sm font-medium shadow-sm transition-all duration-200"
+        >
+          <RotateCcw className="h-4 w-4" />
+          <span>대화 초기화</span>
+        </button>
+
+        <button
+          type="submit"
+          disabled={loading || !input.trim()}
+          className="flex items-center space-x-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Send className="h-4 w-4" />
+          <span>{loading ? "전송 중..." : "전송"}</span>
+        </button>
       </div>
     </form>
   );

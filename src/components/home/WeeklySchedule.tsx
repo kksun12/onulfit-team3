@@ -46,7 +46,8 @@ export default function WeeklySchedule({
           {weekDays.map((date, index) => {
             const isToday = date.toDateString() === new Date().toDateString();
             const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-            const isSelected = selectedDate?.toDateString() === date.toDateString();
+            const isSelected =
+              selectedDate?.toDateString() === date.toDateString();
 
             const dayWorkouts = getWorkoutsByDay(date);
             const dayMeals = getMealsByDay(date);
