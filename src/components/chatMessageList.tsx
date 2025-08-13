@@ -25,7 +25,7 @@ export default function ChatMessageList({
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({
         behavior: "smooth",
-        block: "end",
+        block: "nearest",
       });
     }
   }, [messages, loading, chatEndRef]);
@@ -90,7 +90,7 @@ export default function ChatMessageList({
   };
 
   return (
-    <div className="h-[32rem] overflow-y-auto bg-gray-50/50 rounded-xl p-4 space-y-4 relative">
+    <div className="h-full overflow-y-auto bg-gray-50/50 p-4 space-y-4 relative">
       {messages.length === 0 && (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -114,10 +114,10 @@ export default function ChatMessageList({
         >
           <div
             className={`
-              max-w-3xl w-full rounded-2xl shadow-md border-2 transition-all duration-200
+              relative max-w-3xl w-full rounded-2xl shadow-md border-2 transition-all duration-200
               ${
                 msg.role === "user"
-                  ? "bg-gradient-to-r from-blue-500 to-blue-600 border-blue-400 text-white"
+                  ? "bg-gray-100 border-gray-300 text-gray-800"
                   : "bg-white border-purple-200 text-gray-800 hover:shadow-lg"
               }
               px-6 py-4
@@ -126,7 +126,7 @@ export default function ChatMessageList({
             {/* 메시지 헤더 */}
             <div
               className={`flex items-center mb-3 ${
-                msg.role === "user" ? "text-blue-100" : "text-purple-600"
+                msg.role === "user" ? "text-gray-600" : "text-purple-600"
               }`}
             >
               {msg.role === "user" ? (
@@ -250,7 +250,7 @@ export default function ChatMessageList({
               className={`absolute top-3 right-3 text-xs px-2 py-1 rounded-full transition-all duration-200
                 ${
                   msg.role === "user"
-                    ? "bg-blue-400/20 hover:bg-blue-400/30 text-blue-100"
+                    ? "bg-gray-200 hover:bg-gray-300 text-gray-700"
                     : "bg-purple-100 hover:bg-purple-200 text-purple-700"
                 }`}
               title="클립보드 복사"
