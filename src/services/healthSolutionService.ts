@@ -7,7 +7,7 @@ import {
 } from '@/types/database';
 
 export class HealthSolutionService {
-  // 사용자의 건강 솔루션 조회
+  // 사용자의 건강 솔루션 조회 (최신 순)
   static async getHealthSolution(userId: string): Promise<HealthSolution | null> {
     console.log('🔍 Fetching health solution for user:', userId);
     
@@ -15,6 +15,8 @@ export class HealthSolutionService {
       .from('health_solutions')
       .select('*')
       .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
     console.log('📊 Health solution result:', { data, error });
@@ -31,11 +33,13 @@ export class HealthSolutionService {
   static async getSolutionWorkouts(userId: string): Promise<SolutionWorkoutWithExercise[]> {
     console.log('🏋️ Fetching solution workouts for user:', userId);
     
-    // 먼저 사용자의 솔루션 ID 조회
+    // 먼저 사용자의 최신 솔루션 ID 조회
     const { data: solutionData, error: solutionError } = await supabase
       .from('health_solutions')
       .select('id')
       .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
       
     console.log('🔍 Solution ID lookup:', { solutionData, solutionError });
@@ -79,11 +83,13 @@ export class HealthSolutionService {
   static async getSolutionMeals(userId: string): Promise<SolutionMealWithMeal[]> {
     console.log('🍽️ Fetching solution meals for user:', userId);
     
-    // 먼저 사용자의 솔루션 ID 조회
+    // 먼저 사용자의 최신 솔루션 ID 조회
     const { data: solutionData, error: solutionError } = await supabase
       .from('health_solutions')
       .select('id')
       .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
       
     console.log('🔍 Solution ID lookup for meals:', { solutionData, solutionError });
