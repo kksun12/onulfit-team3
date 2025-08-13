@@ -3,11 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Utensils, Target, Heart, Zap } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { HealthSolutionService } from "@/services/healthSolutionService";
 import { SolutionMealWithMeal } from "@/types/database";
 import { useUserStore } from "@/stores/userStore";
 import Header from "@/components/home/Header";
+import { useAuth, useHealthSolution } from "@/hooks";
 
 interface MealsByTime {
   [key: string]: SolutionMealWithMeal[];
@@ -21,6 +20,8 @@ export default function DietPage() {
   const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay());
   const router = useRouter();
   const { user, userProfile, fetchUser, isAuthenticated } = useUserStore();
+  const { signOut } = useAuth();
+  const { getSolutionMeals } = useHealthSolution();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -48,7 +49,7 @@ export default function DietPage() {
       try {
         setLoading(true);
         // 건강 솔루션 식단 데이터 가져오기
-        const meals = await HealthSolutionService.getSolutionMeals(user.id);
+        const meals = await getSolutionMeals(user.id);
 
         // 식사 시간별로 그룹화
         const groupedMeals: MealsByTime = {};
@@ -143,7 +144,7 @@ export default function DietPage() {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut();
       router.push("/");
     } catch (error) {
       console.error("Logout error:", error);

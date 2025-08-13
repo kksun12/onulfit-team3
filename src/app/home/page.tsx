@@ -2,15 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { useUserStore } from "@/stores/userStore";
-import { HealthSolutionService } from "@/services/healthSolutionService";
-import { completionService } from "@/services/completionService";
 import { HealthSolutionWithDetails } from "@/types/database";
 import Header from "@/components/home/Header";
 import WelcomeSection from "@/components/home/WelcomeSection";
 import WeeklySchedule from "@/components/home/WeeklySchedule";
 import DayDetails from "@/components/home/DayDetails";
+import { useAuth, useProfile, useHealthSolution, useCompletion } from "@/hooks";
 
 // 화면 표시용 변환된 데이터 인터페이스
 export interface WorkoutData {
@@ -59,6 +57,18 @@ export default function HomePage() {
     signOut,
     initializeAuthListener,
   } = useUserStore();
+  
+  const { getUser } = useAuth();
+  const { getProfile } = useProfile();
+  const { getCompleteHealthSolution } = useHealthSolution();
+  const { 
+    getCompletedWorkouts, 
+    getCompletedMeals, 
+    markWorkoutCompleted, 
+    markWorkoutIncomplete,
+    markMealCompleted,
+    markMealIncomplete 
+  } = useCompletion();
 
   // 디버깅을 위한 사용자 상태 로그
   useEffect(() => {
@@ -162,9 +172,7 @@ export default function HomePage() {
       setScheduleError(null);
 
       try {
-        const solution = await HealthSolutionService.getCompleteHealthSolution(
-          userId
-        );
+        const solution = await getCompleteHealthSolution(userId);
 
         if (solution) {
           setHealthSolution(solution);
@@ -194,7 +202,7 @@ export default function HomePage() {
         setScheduleLoading(false);
       }
     },
-    [getCurrentWeekStart, convertHealthSolutionToUserSchedule]
+    [getCurrentWeekStart, convertHealthSolutionToUserSchedule, getCompleteHealthSolution]
   );
 
   // 완료 상태를 데이터베이스에서 불러오기
@@ -204,8 +212,8 @@ export default function HomePage() {
 
       // 병렬로 운동과 식단 완료 상태를 불러오기
       const [completedWorkoutsData, completedMealsData] = await Promise.all([
-        completionService.getCompletedWorkouts(userId),
-        completionService.getCompletedMeals(userId),
+        getCompletedWorkouts(userId),
+        getCompletedMeals(userId),
       ]);
 
       console.log("✅ Loaded completion status:", {
@@ -221,7 +229,7 @@ export default function HomePage() {
       setCompletedWorkouts([]);
       setCompletedMeals([]);
     }
-  }, []);
+  }, [getCompletedWorkouts, getCompletedMeals]);
 
   // 운동 완료 상태 변경 (DB 동기화)
   const handleWorkoutComplete = useCallback(
@@ -251,10 +259,7 @@ export default function HomePage() {
           // 완료 취소
           console.log("🔄 Marking workout as incomplete...");
           try {
-            await completionService.markWorkoutIncomplete(
-              user.id,
-              workout.originalId
-            );
+            await markWorkoutIncomplete(user.id, workout.originalId);
             console.log(
               "✅ Workout marked as incomplete in DB:",
               workout.exercise
@@ -274,10 +279,7 @@ export default function HomePage() {
           // 완료 처리
           console.log("🔄 Marking workout as completed...");
           try {
-            await completionService.markWorkoutCompleted(
-              user.id,
-              workout.originalId
-            );
+            await markWorkoutCompleted(user.id, workout.originalId);
             console.log(
               "✅ Workout marked as completed in DB:",
               workout.exercise
@@ -326,10 +328,7 @@ export default function HomePage() {
           // 완료 취소
           console.log("🔄 Marking meal as incomplete...");
           try {
-            await completionService.markMealIncomplete(
-              user.id,
-              meal.originalId
-            );
+            await markMealIncomplete(user.id, meal.originalId);
             console.log("✅ Meal marked as incomplete in DB:", meal.meal);
           } catch (dbError) {
             console.warn(
@@ -346,7 +345,7 @@ export default function HomePage() {
           // 완료 처리
           console.log("🔄 Marking meal as completed...");
           try {
-            await completionService.markMealCompleted(user.id, meal.originalId);
+            await markMealCompleted(user.id, meal.originalId);
             console.log("✅ Meal marked as completed in DB:", meal.meal);
           } catch (dbError) {
             console.warn(
@@ -396,11 +395,7 @@ export default function HomePage() {
         if (isAuthenticated && user) {
           console.log("✅ User is authenticated:", user.email);
           // 프로필 정보 확인
-          const { data: profileData } = await supabase
-            .from("user_profiles")
-            .select("*")
-            .eq("id", user.id)
-            .maybeSingle();
+          const profileData = await getProfile(user.id);
 
           // 필수 정보가 비어있으면 프로필 페이지로 이동
           if (

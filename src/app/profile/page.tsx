@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User, Trash2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import Header from "@/components/home/Header";
 import SolutionLoadingOverlay from "@/components/common/SolutionLoadingOverlay";
+import { useAuth, useProfile, useHealthSolution } from "@/hooks";
 
 const GENDER_OPTIONS = [
   { value: "male", label: "남성" },
@@ -19,15 +19,14 @@ const ACTIVITY_LEVELS = [
 
 export default function ProfilePage() {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [creatingSolution, setCreatingSolution] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [userName, setUserName] = useState("");
   const [activeTab, setActiveTab] = useState<'view' | 'edit' | 'delete'>('view');
+  const [success, setSuccess] = useState("");
   const router = useRouter();
+  
+  const { getUser, signOut } = useAuth();
+  const { getProfile, updateProfile, deleteProfile, loading, error } = useProfile();
+  const { createSolution, loading: solutionLoading } = useHealthSolution();
 
   const [profile, setProfile] = useState({
     gender: "",
@@ -49,122 +48,33 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    const fetchProfile = async (user: any) => {
-      if (!user) {
-        console.log("❌ fetchProfile: user is null/undefined");
-        setError("로그인이 필요합니다.");
-        setLoading(false);
-        return;
-      }
-
-      console.log("✅ fetchProfile: user found", {
-        id: user.id,
-        email: user.email,
-        aud: user.aud,
-        role: user.role,
-      });
-
+    const fetchData = async () => {
       try {
-        const { data: profileData, error: profileError } = await supabase
-          .from("user_profiles")
-          .select("*")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (profileError) {
-          setProfile({
-            gender: "",
-            birth_date: "",
-            goal: "",
-            height_cm: "",
-            weight_kg: "",
-            activity_level: "",
-            preferred_workout_time: "",
-            available_days: [],
-            diet_type: "",
-          });
-        } else if (profileData) {
-          setProfile({
-            gender: profileData.gender || "",
-            birth_date: profileData.birth_date || "",
-            goal: profileData.goal || "",
-            height_cm: profileData.height_cm || "",
-            weight_kg: profileData.weight_kg || "",
-            activity_level: profileData.activity_level || "",
-            preferred_workout_time: profileData.preferred_workout_time || "",
-            available_days: profileData.available_days || [],
-            diet_type: profileData.diet_type || "",
-          });
-        }
-      } catch (e) {
-        console.error("❌ Profile fetch error:", e);
-        setProfile({
-          gender: "",
-          birth_date: "",
-          goal: "",
-          height_cm: "",
-          weight_kg: "",
-          activity_level: "",
-          preferred_workout_time: "",
-          available_days: [],
-          diet_type: "",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const checkAuthStatus = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-
-        if (user && !error) {
+        const user = await getUser();
+        if (user) {
           setUserName(user.user_metadata?.name || user.email || "");
-          await fetchProfile(user);
-        } else {
-          setError("로그인이 필요합니다.");
-          setLoading(false);
+          const profileData = await getProfile(user.id);
+          if (profileData) {
+            setProfile({
+              gender: profileData.gender || "",
+              birth_date: profileData.birth_date || "",
+              goal: profileData.goal || "",
+              height_cm: profileData.height_cm || "",
+              weight_kg: profileData.weight_kg || "",
+              activity_level: profileData.activity_level || "",
+              preferred_workout_time: profileData.preferred_workout_time || "",
+              available_days: profileData.available_days || [],
+              diet_type: profileData.diet_type || "",
+            });
+          }
         }
       } catch (error) {
-        console.error("❌ Auth check error:", error);
-        setError("인증 확인 중 오류가 발생했습니다.");
-        setLoading(false);
+        console.error("데이터 로드 오류:", error);
       }
     };
 
-    checkAuthStatus();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      try {
-        if (event === "SIGNED_IN" && session?.user) {
-          setUserName(session.user.user_metadata?.name || session.user.email || "");
-          await fetchProfile(session.user);
-        } else if (event === "SIGNED_OUT") {
-          setError("로그인이 필요합니다.");
-          setProfile({
-            gender: "",
-            birth_date: "",
-            goal: "",
-            height_cm: "",
-            weight_kg: "",
-            activity_level: "",
-            preferred_workout_time: "",
-            available_days: [],
-            diet_type: "",
-          });
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Auth state change error:", error);
-        setError("인증 상태 변경 중 오류가 발생했습니다.");
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    fetchData();
+  }, [getUser, getProfile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -192,48 +102,21 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    setError("");
     setSuccess("");
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        setError("로그인이 필요합니다.");
-        setSaving(false);
-        return;
-      }
+      const user = await getUser();
+      if (!user) return;
 
-      const { error: upsertError } = await supabase
-        .from("user_profiles")
-        .upsert(
-          {
-            id: user.id,
-            email: user.email,
-            name: user.user_metadata?.name || "",
-            gender: profile.gender,
-            birth_date: profile.birth_date,
-            goal: profile.goal,
-            height_cm: profile.height_cm,
-            weight_kg: profile.weight_kg,
-            activity_level: profile.activity_level,
-            preferred_workout_time: profile.preferred_workout_time,
-            available_days: profile.available_days,
-            diet_type: profile.diet_type,
-            last_updated: new Date().toISOString(),
-          },
-          { onConflict: "id" }
-        );
-
-      if (upsertError) {
-        setError("저장에 실패했습니다: " + upsertError.message);
-      } else {
-        setSuccess("프로필이 저장되었습니다.");
-        setActiveTab('view');
-      }
+      await updateProfile(user.id, {
+        email: user.email,
+        name: user.user_metadata?.name || "",
+        ...profile,
+      });
+      
+      setSuccess("프로필이 저장되었습니다.");
+      setActiveTab('view');
     } catch (e) {
-      setError("저장 중 오류가 발생했습니다.");
-    } finally {
-      setSaving(false);
+      console.error("프로필 저장 오류:", e);
     }
   };
 
@@ -242,68 +125,30 @@ export default function ProfilePage() {
       return;
     }
     
-    setDeleting(true);
-    setError("");
-    
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        setError("로그인이 필요합니다.");
-        return;
-      }
+      const user = await getUser();
+      if (!user) return;
 
-      await supabase.from("user_profiles").delete().eq("id", user.id);
-      await supabase.auth.signOut();
+      await deleteProfile(user.id);
+      await signOut();
       
       alert("회원탈퇴가 완료되었습니다.");
       router.push("/");
     } catch (e) {
-      setError("회원탈퇴 중 오류가 발생했습니다.");
-    } finally {
-      setDeleting(false);
+      console.error("회원탈퇴 오류:", e);
     }
   };
 
   const handleCreateSolution = async () => {
-    console.log('🚀 [프로필] 솔루션 생성 시작');
-    setCreatingSolution(true);
-    setError("");
     setSuccess("");
-    
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        console.log('❌ [프로필] 인증 오류');
-        setError("로그인이 필요합니다.");
-        return;
-      }
+      const user = await getUser();
+      if (!user) return;
 
-      console.log('📡 [프로필] API 호출 시작 - userId:', user.email);
-      const solutionResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/diet-health-insert`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ userId: user.email }),
-        }
-      );
-      
-      console.log('📊 [프로필] API 응답 상태:', solutionResponse.status);
-      if (solutionResponse.ok) {
-        console.log('✅ [프로필] 솔루션 생성 성공');
-        setSuccess("새로운 솔루션이 생성되었습니다!");
-      } else {
-        console.log('❌ [프로필] 솔루션 생성 실패 - 상태:', solutionResponse.status);
-        setError("솔루션 생성에 실패했습니다.");
-      }
-    } catch (solutionError) {
-      console.error('❌ [프로필] 솔루션 생성 오류:', solutionError);
-      setError("솔루션 생성 중 오류가 발생했습니다.");
-    } finally {
-      console.log('🏁 [프로필] 솔루션 생성 완료');
-      setCreatingSolution(false);
+      await createSolution(user.email || "");
+      setSuccess("새로운 솔루션이 생성되었습니다!");
+    } catch (error) {
+      console.error('솔루션 생성 오류:', error);
     }
   };
 
@@ -319,10 +164,10 @@ export default function ProfilePage() {
             </div>
             <button
               onClick={handleCreateSolution}
-              disabled={creatingSolution}
+              disabled={solutionLoading}
               className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
             >
-              {creatingSolution ? (
+              {solutionLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   생성 중...
@@ -553,10 +398,10 @@ export default function ProfilePage() {
           </button>
           <button
             type="submit"
-            disabled={saving}
+            disabled={loading}
             className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? "저장 중..." : "저장하기"}
+            {loading ? "저장 중..." : "저장하기"}
           </button>
         </div>
       </form>
@@ -610,7 +455,7 @@ export default function ProfilePage() {
               className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Trash2 className="h-4 w-4" />
-              {deleting ? "탈퇴 처리 중..." : "회원탈퇴 확인"}
+              {loading ? "탈퇴 처리 중..." : "회원탈퇴 확인"}
             </button>
           </div>
         </div>
@@ -624,7 +469,7 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut();
       router.push("/");
     } catch (error) {
       console.error("Logout error:", error);
@@ -682,10 +527,10 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <SolutionLoadingOverlay isVisible={creatingSolution} />
+      <SolutionLoadingOverlay isVisible={solutionLoading} />
       <Header
         currentTime={currentTime}
-        isAuthenticated={!error}
+        isAuthenticated={!!userName}
         userName={userName}
         onLogin={handleLogin}
         onLogout={handleLogout}
