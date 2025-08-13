@@ -5,8 +5,6 @@ import ChatTextarea from "@/components/chatTextarea";
 import axios from "axios";
 import { useState, useRef, useEffect } from "react";
 
-
-
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -21,18 +19,13 @@ export interface SQLResult {
 }
 
 export default function ChatPage() {
-  
-
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  
-
-
-  const userId = 'hosin2004@gmail.com';
+  const userId = "hosin2004@gmail.com";
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -43,19 +36,17 @@ export default function ChatPage() {
     setMessages(updatedMessages);
     setInput("");
     setLoading(true);
-    console.log("=============")
+    console.log("=============");
 
     try {
-        
-      
-      console.log(userId)
+      console.log(userId);
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/diet-health-chat`,
         {
           messages: updatedMessages,
-        //   category,
-          userId: 'hosin2004@gmail.com',
-        //   whatapSqlDTO: selectedSqlResult,
+          //   category,
+          userId: "hosin2004@gmail.com",
+          //   whatapSqlDTO: selectedSqlResult,
         }
       );
       console.log("---------------------");
@@ -89,7 +80,7 @@ export default function ChatPage() {
           "gi"
         );
 
-        const restoredText = aiText.replace(regex, (match) =>
+        const restoredText = aiText.replace(regex, (match: string) =>
           match.replace(/\*/g, "0")
         );
 
@@ -122,7 +113,6 @@ export default function ChatPage() {
     }
   };
 
- 
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -134,7 +124,6 @@ export default function ChatPage() {
   return (
     <main className="max-w-6xl mx-auto p-5 space-y-5 text-gray-800">
       <h1 className="text-base font-bold text-blue-600">💬 LLM 대화창</h1>
-
 
       <ChatMessageList
         messages={messages}
