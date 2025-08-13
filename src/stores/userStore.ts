@@ -88,40 +88,22 @@ export const useUserStore = create<UserState>((set, get) => ({
       }
     });
 
-    // 초기 세션 상태 확인
-    const checkInitialSession = async () => {
-      try {
-        console.log("🔍 Checking initial session...");
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
-
-        if (session?.user && !error) {
-          console.log("✅ Initial session found:", session.user.email);
-          const appUser: AppUser = {
-            id: session.user.id,
-            email: session.user.email || "",
-            user_metadata: session.user.user_metadata,
-          };
-          set({
-            user: appUser,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-          // 사용자 프로필도 함께 가져오기
-          await get().fetchUserProfile();
-        } else {
-          console.log("❌ No initial session found");
-          set({
-            user: null,
-            userProfile: null,
-            isAuthenticated: false,
-            isLoading: false,
-          });
-        }
-      } catch (error) {
-        console.error("Error checking initial session:", error);
+    // 초기 세션 상태 확인 (즉시 실행)
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (session?.user && !error) {
+        console.log("✅ Initial session found:", session.user.email);
+        const appUser: AppUser = {
+          id: session.user.id,
+          email: session.user.email || "",
+          user_metadata: session.user.user_metadata,
+        };
+        set({
+          user: appUser,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      } else {
+        console.log("❌ No initial session found");
         set({
           user: null,
           userProfile: null,
@@ -129,10 +111,14 @@ export const useUserStore = create<UserState>((set, get) => ({
           isLoading: false,
         });
       }
-    };
-
-    // 초기 세션 확인 실행
-    checkInitialSession();
+    }).catch(() => {
+      set({
+        user: null,
+        userProfile: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+    });
 
     // cleanup 함수 반환 (필요시 사용)
     return () => {

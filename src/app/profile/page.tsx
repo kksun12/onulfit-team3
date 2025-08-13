@@ -6,6 +6,7 @@ import { User, Trash2 } from "lucide-react";
 import Header from "@/components/home/Header";
 import SolutionLoadingOverlay from "@/components/common/SolutionLoadingOverlay";
 import { useAuth, useProfile, useHealthSolution } from "@/hooks";
+import { supabase } from "@/lib/supabase";
 
 const GENDER_OPTIONS = [
   { value: "male", label: "남성" },
@@ -19,7 +20,6 @@ const ACTIVITY_LEVELS = [
 
 export default function ProfilePage() {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [userName, setUserName] = useState("");
   const [activeTab, setActiveTab] = useState<'view' | 'edit' | 'delete'>('view');
   const [success, setSuccess] = useState("");
   const router = useRouter();
@@ -27,6 +27,8 @@ export default function ProfilePage() {
   const { getUser, signOut } = useAuth();
   const { getProfile, updateProfile, deleteProfile, loading, error } = useProfile();
   const { createSolution, loading: solutionLoading } = useHealthSolution();
+  
+  const [userName, setUserName] = useState("");
 
   const [profile, setProfile] = useState({
     gender: "",
@@ -74,7 +76,7 @@ export default function ProfilePage() {
     };
 
     fetchData();
-  }, [getUser, getProfile]);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -469,10 +471,11 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     try {
-      await signOut();
-      router.push("/");
+      await supabase.auth.signOut();
+      window.location.href = '/';
     } catch (error) {
       console.error("Logout error:", error);
+      window.location.href = '/';
     }
   };
 
@@ -530,7 +533,7 @@ export default function ProfilePage() {
       <SolutionLoadingOverlay isVisible={solutionLoading} />
       <Header
         currentTime={currentTime}
-        isAuthenticated={!!userName}
+        isAuthenticated={!error}
         userName={userName}
         onLogin={handleLogin}
         onLogout={handleLogout}

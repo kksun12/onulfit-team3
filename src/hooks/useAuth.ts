@@ -48,16 +48,12 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
-    setLoading(true);
-    setError(null);
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      await supabase.auth.signOut();
+      window.location.href = '/';
     } catch (err: any) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
+      console.error('Logout error:', err);
+      window.location.href = '/';
     }
   };
 

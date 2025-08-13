@@ -7,6 +7,7 @@ import { SolutionMealWithMeal } from "@/types/database";
 import { useUserStore } from "@/stores/userStore";
 import Header from "@/components/home/Header";
 import { useAuth, useHealthSolution } from "@/hooks";
+import { supabase } from "@/lib/supabase";
 
 interface MealsByTime {
   [key: string]: SolutionMealWithMeal[];
@@ -31,26 +32,16 @@ export default function DietPage() {
   }, []);
 
   useEffect(() => {
-    const initializeData = async () => {
-      if (!isAuthenticated) {
-        await fetchUser();
-      }
-    };
-    initializeData();
-  }, [isAuthenticated, fetchUser]);
-
-  useEffect(() => {
-    const fetchMealsData = async () => {
+    const loadMealsData = async () => {
       if (!user) {
-        router.push("/");
+        setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
-        // 건강 솔루션 식단 데이터 가져오기
         const meals = await getSolutionMeals(user.id);
-
+        
         // 식사 시간별로 그룹화
         const groupedMeals: MealsByTime = {};
         meals.forEach((meal) => {
@@ -62,24 +53,27 @@ export default function DietPage() {
         });
 
         setMealsByTime(groupedMeals);
-
+        
         // 첫 번째 식사 시간을 기본 선택으로 설정
         const firstMealTime = Object.keys(groupedMeals)[0];
         if (firstMealTime) {
           setSelectedMeal(firstMealTime);
         }
       } catch (error) {
-        console.error("❌ [식단] 식단 데이터 로드 오류:", error);
+        console.error("식단 데이터 로드 오류:", error);
+        // 에러 시 기본 빈 데이터
+        setMealsByTime({
+          "아침": [],
+          "점심": [],
+          "저녁": []
+        });
       } finally {
-        console.log("🏁 [식단] 식단 데이터 로드 완료");
         setLoading(false);
       }
     };
 
-    if (user) {
-      fetchMealsData();
-    }
-  }, [user, router]);
+    loadMealsData();
+  }, [user?.id]);
 
   const getDayName = (dayIndex: number) => {
     const days = ["일", "월", "화", "수", "목", "금", "토"];
@@ -144,10 +138,11 @@ export default function DietPage() {
 
   const handleLogout = async () => {
     try {
-      await signOut();
-      router.push("/");
+      await supabase.auth.signOut();
+      window.location.href = '/';
     } catch (error) {
       console.error("Logout error:", error);
+      window.location.href = '/';
     }
   };
 
