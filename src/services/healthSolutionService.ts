@@ -4,7 +4,7 @@ import {
   SolutionWorkoutWithExercise,
   SolutionMealWithMeal,
   HealthSolutionWithDetails 
-} from '@/types/database';
+} from '@/types';
 
 export class HealthSolutionService {
   // 사용자의 건강 솔루션 조회

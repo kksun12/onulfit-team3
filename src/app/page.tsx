@@ -1,58 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks";
 import AuthHeader from "@/components/auth/AuthHeader";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import LoginForm from "@/components/auth/LoginForm";
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const router = useRouter();
+  const { login, oAuthLogin, isLoading, error } = useAuth();
 
   const handleLogin = async (email: string, password: string) => {
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        setError(error.message);
-      } else {
-        router.push("/home");
-      }
-    } catch (error) {
-      setError("로그인 중 오류가 발생했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
+    await login({ email, password });
   };
 
   const handleOAuthLogin = async (provider: "google" | "discord") => {
-    setIsLoading(true);
-    setError("");
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo:
-            typeof window !== "undefined"
-              ? window.location.origin + "/home"
-              : undefined,
-        },
-      });
-      if (error) setError(error.message);
-    } catch (e) {
-      setError("소셜 로그인 중 오류가 발생했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
+    await oAuthLogin(provider);
   };
 
   return (

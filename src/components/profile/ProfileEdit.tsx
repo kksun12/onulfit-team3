@@ -1,18 +1,9 @@
 "use client";
 
-interface ProfileData {
-  gender: string;
-  birth_date: string;
-  height_cm: string;
-  weight_kg: string;
-  activity_level: string;
-  preferred_workout_time: string;
-  available_days: string[];
-  diet_type: string;
-}
+import { ProfileFormData, GENDER_OPTIONS, ACTIVITY_LEVELS, DIET_GOALS } from "@/types";
 
 interface ProfileEditProps {
-  profile: ProfileData;
+  profile: ProfileFormData;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   onSubmit: (e: React.FormEvent) => Promise<void>;
   onCancel: () => void;
@@ -20,17 +11,6 @@ interface ProfileEditProps {
   error: string;
   success: string;
 }
-
-const GENDER_OPTIONS = [
-  { value: "male", label: "남성" },
-  { value: "female", label: "여성" },
-];
-
-const ACTIVITY_LEVELS = [
-  { value: "1-2", label: "주 1~2회 (가벼운 활동)" },
-  { value: "3-4", label: "주 3~4회 (보통 활동)" },
-  { value: "5+", label: "주 5회 이상 (활발한 활동)" },
-];
 
 export default function ProfileEdit({ 
   profile, 
@@ -162,11 +142,7 @@ export default function ProfileEdit({
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-3">운동 목표</label>
         <div className="grid grid-cols-3 gap-4">
-          {[
-            { value: "체중감량", label: "체중감량" },
-            { value: "근육증가", label: "근육증가" },
-            { value: "건강유지", label: "건강유지" }
-          ].map((goal) => (
+          {DIET_GOALS.map((goal) => (
             <label key={goal.value} className={`flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
               profile.diet_type === goal.value
                 ? "border-blue-500 bg-blue-50 text-blue-700"

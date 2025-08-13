@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Mail, User, Phone } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks";
+import { SignupData } from "@/types";
 import AuthHeader from "@/components/auth/AuthHeader";
 import InputField from "@/components/auth/InputField";
 import PasswordField from "@/components/auth/PasswordField";
 
 export default function SignupPage() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<SignupData>({
     email: "",
     password: "",
     confirmPassword: "",
@@ -18,9 +18,7 @@ export default function SignupPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const router = useRouter();
+  const { signup, isLoading, error } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -32,44 +30,7 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("비밀번호가 일치하지 않습니다.");
-      setIsLoading(false);
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError("비밀번호는 최소 6자 이상이어야 합니다.");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            name: formData.name,
-            phone: formData.phone,
-          },
-        },
-      });
-
-      if (error) {
-        setError(error.message);
-      } else {
-        alert("회원가입이 완료되었습니다. 이메일을 확인해주세요.");
-        router.push("/");
-      }
-    } catch {
-      setError("회원가입 중 오류가 발생했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
+    await signup(formData);
   };
 
   return (

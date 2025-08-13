@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useProfile } from "@/hooks";
 import Header from "@/components/home/Header";
 import ProfileSidebar from "@/components/profile/ProfileSidebar";
 import ProfileView from "@/components/profile/ProfileView";
@@ -14,26 +15,23 @@ import DeleteAccount from "@/components/profile/DeleteAccount";
 
 export default function ProfilePage() {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [userName, setUserName] = useState("");
   const [activeTab, setActiveTab] = useState<'view' | 'edit' | 'delete'>('view');
+  const [deleting, setDeleting] = useState(false);
   const router = useRouter();
-
-  const [profile, setProfile] = useState({
-    gender: "",
-    birth_date: "",
-    goal: "",
-    height_cm: "",
-    weight_kg: "",
-    activity_level: "",
-    preferred_workout_time: "",
-    available_days: [] as string[],
-    diet_type: "",
-  });
+  
+  const {
+    profile,
+    setProfile,
+    isLoading: loading,
+    isSaving: saving,
+    error,
+    success,
+    setError,
+    setSuccess,
+    updateProfile,
+    deleteAccount,
+  } = useProfile();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -186,48 +184,12 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    setError("");
-    setSuccess("");
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        setError("로그인이 필요합니다.");
-        setSaving(false);
-        return;
-      }
-
-      const { error: upsertError } = await supabase
-        .from("user_profiles")
-        .upsert(
-          {
-            id: user.id,
-            email: user.email,
-            name: user.user_metadata?.name || "",
-            gender: profile.gender,
-            birth_date: profile.birth_date,
-            goal: profile.goal,
-            height_cm: profile.height_cm,
-            weight_kg: profile.weight_kg,
-            activity_level: profile.activity_level,
-            preferred_workout_time: profile.preferred_workout_time,
-            available_days: profile.available_days,
-            diet_type: profile.diet_type,
-            last_updated: new Date().toISOString(),
-          },
-          { onConflict: "id" }
-        );
-
-      if (upsertError) {
-        setError("저장에 실패했습니다: " + upsertError.message);
-      } else {
-        setSuccess("프로필이 저장되었습니다.");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const success = await updateProfile(profile, user.id);
+      if (success) {
         setActiveTab('view');
       }
-    } catch (e) {
-      setError("저장 중 오류가 발생했습니다.");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -237,25 +199,14 @@ export default function ProfilePage() {
     }
     
     setDeleting(true);
-    setError("");
+    const success = await deleteAccount();
     
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        setError("로그인이 필요합니다.");
-        return;
-      }
-
-      await supabase.from("user_profiles").delete().eq("id", user.id);
-      await supabase.auth.signOut();
-      
+    if (success) {
       alert("회원탈퇴가 완료되었습니다.");
       router.push("/");
-    } catch (e) {
-      setError("회원탈퇴 중 오류가 발생했습니다.");
-    } finally {
-      setDeleting(false);
     }
+    
+    setDeleting(false);
   };
 
 

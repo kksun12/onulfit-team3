@@ -1,12 +1,7 @@
 "use client";
 
 import { Target, Heart, Zap } from "lucide-react";
-
-interface UserProfile {
-  diet_type: string;
-  height_cm: string;
-  weight_kg: string;
-}
+import { UserProfile } from "@/types";
 
 interface UserProfileCardProps {
   userProfile: UserProfile;

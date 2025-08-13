@@ -1,25 +1,10 @@
 "use client";
 
-interface ProfileData {
-  gender: string;
-  birth_date: string;
-  height_cm: string;
-  weight_kg: string;
-  activity_level: string;
-  preferred_workout_time: string;
-  available_days: string[];
-  diet_type: string;
-}
+import { ProfileFormData, ACTIVITY_LEVELS } from "@/types";
 
 interface ProfileViewProps {
-  profile: ProfileData;
+  profile: ProfileFormData;
 }
-
-const ACTIVITY_LEVELS = [
-  { value: "1-2", label: "주 1~2회 (가벼운 활동)" },
-  { value: "3-4", label: "주 3~4회 (보통 활동)" },
-  { value: "5+", label: "주 5회 이상 (활발한 활동)" },
-];
 
 export default function ProfileView({ profile }: ProfileViewProps) {
   return (

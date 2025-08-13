@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { HealthSolutionService } from "@/services/healthSolutionService";
-import { SolutionMealWithMeal } from "@/types/database";
 import { useUserStore } from "@/stores/userStore";
+import { useDiet } from "@/hooks";
 import Header from "@/components/home/Header";
 import UserProfileCard from "@/components/diet/UserProfileCard";
 import DaySelector from "@/components/diet/DaySelector";
@@ -15,18 +14,21 @@ import MealCard from "@/components/diet/MealCard";
 import EmptyMealState from "@/components/diet/EmptyMealState";
 import DietTips from "@/components/diet/DietTips";
 
-interface MealsByTime {
-  [key: string]: SolutionMealWithMeal[];
-}
-
 export default function DietPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [loading, setLoading] = useState(true);
-  const [mealsByTime, setMealsByTime] = useState<MealsByTime>({});
-  const [selectedMeal, setSelectedMeal] = useState<string>("아침");
-  const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay());
   const router = useRouter();
   const { user, userProfile, fetchUser, isAuthenticated } = useUserStore();
+  const {
+    mealsByTime,
+    selectedMeal,
+    setSelectedMeal,
+    selectedDay,
+    setSelectedDay,
+    isLoading: loading,
+    getDayName,
+    getCurrentDayMeals,
+    getTotalNutrients,
+  } = useDiet(user?.id);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -45,72 +47,10 @@ export default function DietPage() {
   }, [isAuthenticated, fetchUser]);
 
   useEffect(() => {
-    const fetchMealsData = async () => {
-      if (!user) {
-        router.push("/");
-        return;
-      }
-
-      try {
-        setLoading(true);
-        // 건강 솔루션 식단 데이터 가져오기
-        const meals = await HealthSolutionService.getSolutionMeals(user.id);
-        
-        // 식사 시간별로 그룹화
-        const groupedMeals: MealsByTime = {};
-        meals.forEach(meal => {
-          const mealTime = meal.meal_time || "기타";
-          if (!groupedMeals[mealTime]) {
-            groupedMeals[mealTime] = [];
-          }
-          groupedMeals[mealTime].push(meal);
-        });
-        
-        setMealsByTime(groupedMeals);
-        
-        // 첫 번째 식사 시간을 기본 선택으로 설정
-        const firstMealTime = Object.keys(groupedMeals)[0];
-        if (firstMealTime) {
-          setSelectedMeal(firstMealTime);
-        }
-      } catch (error) {
-        console.error("Error fetching meals data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user) {
-      fetchMealsData();
+    if (!user) {
+      router.push("/");
     }
   }, [user, router]);
-
-  const getDayName = (dayIndex: number) => {
-    const days = ["일", "월", "화", "수", "목", "금", "토"];
-    return days[dayIndex];
-  };
-
-  const getCurrentDayMeals = () => {
-    const selectedMeals = mealsByTime[selectedMeal] || [];
-    return selectedMeals.filter(meal => meal.meal_day === selectedDay);
-  };
-
-  const getNutrientValue = (meal: SolutionMealWithMeal, nutrient: string): number => {
-    return meal.meal?.nutrients?.[nutrient] || 0;
-  };
-
-  const getTotalNutrients = () => {
-    const currentMeals = getCurrentDayMeals();
-    return currentMeals.reduce((total, meal) => {
-      const nutrients = meal.meal?.nutrients || {};
-      return {
-        calories: total.calories + (nutrients["칼로리"] || 0),
-        protein: total.protein + (nutrients["단백질"] || 0),
-        carbs: total.carbs + (nutrients["탄수화물"] || 0),
-        fat: total.fat + (nutrients["지방"] || 0)
-      };
-    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-  };
 
 
 

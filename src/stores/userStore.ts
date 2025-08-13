@@ -1,27 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
-
-interface User {
-  id: string;
-  email: string;
-  user_metadata?: {
-    name?: string;
-    phone?: string;
-  };
-}
-
-interface UserProfile {
-  id: string;
-  gender: string;
-  birth_date: string;
-  goal: string;
-  height_cm: string;
-  weight_kg: string;
-  activity_level: string;
-  preferred_workout_time: string;
-  available_days: string[];
-  diet_type: string;
-}
+import { User, UserProfile } from "@/types";
 
 interface UserState {
   user: User | null;
