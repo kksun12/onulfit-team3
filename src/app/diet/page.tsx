@@ -68,8 +68,9 @@ export default function DietPage() {
           setSelectedMeal(firstMealTime);
         }
       } catch (error) {
-        console.error("Error fetching meals data:", error);
+        console.error('❌ [식단] 식단 데이터 로드 오류:', error);
       } finally {
+        console.log('🏁 [식단] 식단 데이터 로드 완료');
         setLoading(false);
       }
     };

@@ -129,17 +129,22 @@ export default function HomePage() {
 
   const fetchHealthSolution = useCallback(
     async (userId: string) => {
+      console.log(`🔄 [홈] 솔루션 로드 시작 - userId: ${userId}`);
       setScheduleLoading(true);
       setScheduleError(null);
 
       try {
+        console.log('📡 [홈] HealthSolutionService.getCompleteHealthSolution 호출');
         const solution = await HealthSolutionService.getCompleteHealthSolution(userId);
+        console.log('📊 [홈] 솔루션 응답:', solution ? '데이터 있음' : '데이터 없음');
         
         if (solution) {
+          console.log('✅ [홈] 솔루션 데이터 변환 및 설정 완료');
           setHealthSolution(solution);
           const convertedSchedule = convertHealthSolutionToUserSchedule(solution as any);
           setUserSchedule(convertedSchedule);
         } else {
+          console.log('⚠️ [홈] 솔루션 없음 - 빈 스케줄로 진행');
           const weekStart = getCurrentWeekStart();
           setUserSchedule({
             user_id: userId,
@@ -149,6 +154,7 @@ export default function HomePage() {
           });
         }
       } catch (error) {
+        console.error('❌ [홈] 건강 솔루션 로드 오류:', error);
         setScheduleError("건강 솔루션을 불러오는데 실패했습니다.");
         const weekStart = getCurrentWeekStart();
         setUserSchedule({
@@ -158,6 +164,7 @@ export default function HomePage() {
           meals: [],
         });
       } finally {
+        console.log('🏁 [홈] 솔루션 로드 완료 - 로딩 상태 해제');
         setScheduleLoading(false);
       }
     },
@@ -174,23 +181,27 @@ export default function HomePage() {
   // 로그인 상태 확인
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('🔐 [홈] 인증 상태 확인 시작');
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
+        console.log('📊 [홈] 인증 응답:', { user: user ? '로그인됨' : '비로그인', error });
         
         if (user && !error) {
+          console.log('✅ [홈] 로그인 상태 확인됨 - 사용자:', user.email);
           setIsLoggedIn(true);
           setUserName(user.user_metadata?.name || user.email || "");
         } else {
-          // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
+          console.log('❌ [홈] 비로그인 상태 - 로그인 페이지로 이동');
           router.replace("/");
           return;
         }
       } catch (error) {
-        console.error("Auth error:", error);
+        console.error('❌ [홈] 인증 오류:', error);
         router.replace("/");
         return;
       }
       
+      console.log('🏁 [홈] 인증 확인 완료 - 로딩 상태 해제');
       setIsLoading(false);
     };
 
@@ -200,24 +211,29 @@ export default function HomePage() {
   // 프로필 체크 및 건강 솔루션 로드
   useEffect(() => {
     if (isLoggedIn && !isLoading) {
+      console.log('📄 [홈] 프로필 체크 및 솔루션 로드 시작');
       const checkProfileAndLoadSolution = async () => {
         const { data: { user }, error } = await supabase.auth.getUser();
         if (user && !error) {
+          console.log('📄 [홈] 프로필 정보 확인 시작');
           // 프로필 정보 확인
           const { data: profileData } = await supabase
             .from("user_profiles")
             .select("*")
             .eq("id", user.id)
             .maybeSingle();
+          console.log('📊 [홈] 프로필 데이터:', profileData ? '있음' : '없음');
             
           // 필수 정보가 비어있으면 프로필 페이지로 이동
           if (!profileData || !profileData.gender || !profileData.birth_date || 
               !profileData.height_cm || !profileData.weight_kg) {
+            console.log('⚠️ [홈] 프로필 정보 불완전 - 프로필 페이지로 이동');
             router.replace("/profile");
             return;
           }
           
           // 프로필이 완성된 경우 건강 솔루션 로드
+          console.log('✅ [홈] 프로필 완성 확인 - 솔루션 로드 시작');
           fetchHealthSolution(user.id);
         }
       };
