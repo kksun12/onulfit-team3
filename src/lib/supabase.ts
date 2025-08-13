@@ -23,4 +23,16 @@ export const getRedirectUrl = () => {
   return "http://localhost:3000";
 };
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// OAuth callback URL 생성
+export const getOAuthCallbackUrl = () => {
+  const baseUrl = getRedirectUrl();
+  return `${baseUrl}/auth/callback`;
+};
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+});
