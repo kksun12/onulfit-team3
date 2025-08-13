@@ -60,7 +60,7 @@ export default function ProfilePage() {
             setProfile({
               gender: profileData.gender || "",
               birth_date: profileData.birth_date || "",
-              goal: profileData.goal || "",
+              goal: "",
               height_cm: profileData.height_cm || "",
               weight_kg: profileData.weight_kg || "",
               activity_level: profileData.activity_level || "",
