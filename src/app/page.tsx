@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, Activity } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { FaDiscord } from "react-icons/fa";
-import { supabase, getRedirectUrl } from "@/lib/supabase";
+import { supabase, getOAuthCallbackUrl } from "@/lib/supabase";
+import { useUserStore } from "@/stores/userStore";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,6 +15,25 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  const { user, isAuthenticated, initializeAuthListener } = useUserStore();
+
+  // 컴포넌트 마운트 시 auth listener 초기화
+  useEffect(() => {
+    console.log("🚀 Initializing auth listener...");
+    initializeAuthListener();
+  }, [initializeAuthListener]);
+
+  // 이미 로그인된 사용자는 홈으로 리다이렉트
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log(
+        "✅ User already authenticated, redirecting to home:",
+        user.email
+      );
+      router.push("/home");
+    }
+  }, [isAuthenticated, user, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +49,7 @@ export default function LoginPage() {
       if (error) {
         setError(error.message);
       } else {
+        console.log("✅ Password login successful:", data.user?.email);
         // 로그인 성공 시 홈 페이지로 이동
         router.push("/home");
       }
@@ -42,16 +63,32 @@ export default function LoginPage() {
   const handleOAuthLogin = async (provider: "google" | "discord") => {
     setIsLoading(true);
     setError("");
+
     try {
+      console.log("🔄 Starting OAuth login with provider:", provider);
+      console.log("📍 Redirect URL:", getOAuthCallbackUrl());
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: getRedirectUrl() + "/home",
+          redirectTo: getOAuthCallbackUrl(),
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
         },
       });
-      if (error) setError(error.message);
+
+      if (error) {
+        console.error("❌ OAuth error:", error);
+        setError(`OAuth 로그인 오류: ${error.message}`);
+      } else {
+        console.log("✅ OAuth redirect initiated");
+        // OAuth는 별도 창/탭에서 처리되므로 여기서는 대기
+      }
     } catch (e) {
-      setError("소셜 로그인 중 오류가 발생했습니다.");
+      console.error("❌ Unexpected OAuth error:", e);
+      setError("소셜 로그인 중 예상치 못한 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }
