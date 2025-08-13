@@ -43,8 +43,12 @@ export const useUserStore = create<UserState>((set, get) => ({
   isAuthenticated: false,
 
   initializeAuthListener: () => {
+    console.log("🚀 Auth listener initialized");
+
     // Supabase 인증 상태 변화를 실시간으로 감지
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("🔄 Auth state changed:", event, session?.user?.email);
 
       if (event === "SIGNED_IN" && session?.user) {
@@ -87,6 +91,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     // 초기 세션 상태 확인
     const checkInitialSession = async () => {
       try {
+        console.log("🔍 Checking initial session...");
         const {
           data: { session },
           error,
@@ -128,6 +133,11 @@ export const useUserStore = create<UserState>((set, get) => ({
 
     // 초기 세션 확인 실행
     checkInitialSession();
+
+    // cleanup 함수 반환 (필요시 사용)
+    return () => {
+      subscription?.unsubscribe();
+    };
   },
 
   fetchUser: async () => {

@@ -66,6 +66,7 @@ export default function HomePage() {
       user: user ? { id: user.id, email: user.email } : null,
       isAuthenticated,
       userStoreLoading,
+      timestamp: new Date().toISOString(),
     });
   }, [user, isAuthenticated, userStoreLoading]);
 
@@ -386,6 +387,12 @@ export default function HomePage() {
           userStoreLoading,
         });
 
+        // 로딩 중이면 대기
+        if (userStoreLoading) {
+          console.log("⏳ Still loading, waiting...");
+          return;
+        }
+
         if (isAuthenticated && user) {
           console.log("✅ User is authenticated:", user.email);
 
@@ -431,9 +438,7 @@ export default function HomePage() {
     };
 
     // useUserStore의 상태가 설정된 후에만 체크
-    if (!userStoreLoading) {
-      checkAuth();
-    }
+    checkAuth();
   }, [
     isAuthenticated,
     user,
@@ -511,7 +516,22 @@ export default function HomePage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
+          <p className="text-gray-600">인증 상태 확인 중...</p>
+          <p className="text-sm text-gray-500 mt-2">잠시만 기다려주세요</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 인증되지 않은 경우 로그인 페이지로 리다이렉트
+  if (!isAuthenticated || !user) {
+    console.log("❌ Not authenticated, redirecting to login");
+    router.replace("/");
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">로그인 페이지로 이동 중...</p>
         </div>
       </div>
     );
