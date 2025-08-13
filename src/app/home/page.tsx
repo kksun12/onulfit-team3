@@ -1,16 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { useUserStore } from "@/stores/userStore";
-import { HealthSolutionService } from "@/services/healthSolutionService";
-import { completionService } from "@/services/completionService";
 import { HealthSolutionWithDetails } from "@/types/database";
 import Header from "@/components/home/Header";
 import WelcomeSection from "@/components/home/WelcomeSection";
 import WeeklySchedule from "@/components/home/WeeklySchedule";
 import DayDetails from "@/components/home/DayDetails";
+import { useAuth, useProfile, useHealthSolution, useCompletion } from "@/hooks";
+import { supabase } from "@/lib/supabase";
 
 // 화면 표시용 변환된 데이터 인터페이스
 export interface WorkoutData {
@@ -49,6 +48,7 @@ export default function HomePage() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [userName, setUserName] = useState("");
+  const [dataLoaded, setDataLoaded] = useState(false);
   const router = useRouter();
 
   const {
@@ -59,6 +59,9 @@ export default function HomePage() {
     signOut,
     initializeAuthListener,
   } = useUserStore();
+  
+  const { getCompleteHealthSolution } = useHealthSolution();
+  const completionHooks = useCompletion();
 
   // 디버깅을 위한 사용자 상태 로그
   useEffect(() => {
@@ -72,8 +75,8 @@ export default function HomePage() {
 
   // 컴포넌트 마운트 시 auth listener 초기화
   useEffect(() => {
-    console.log("🚀 Initializing auth listener in home page...");
-    initializeAuthListener();
+    const cleanup = initializeAuthListener();
+    return cleanup;
   }, [initializeAuthListener]);
 
   // 사용자 정보가 로드되면 사용자명 설정
@@ -156,33 +159,22 @@ export default function HomePage() {
     []
   );
 
-  const fetchHealthSolution = useCallback(
-    async (userId: string) => {
-      setScheduleLoading(true);
-      setScheduleError(null);
+  const fetchHealthSolutionRef = useRef<(userId: string) => Promise<void>>();
+  
+  fetchHealthSolutionRef.current = async (userId: string) => {
+    setScheduleLoading(true);
+    setScheduleError(null);
 
-      try {
-        const solution = await HealthSolutionService.getCompleteHealthSolution(
-          userId
+    try {
+      const solution = await getCompleteHealthSolution(userId);
+
+      if (solution) {
+        setHealthSolution(solution);
+        const convertedSchedule = convertHealthSolutionToUserSchedule(
+          solution as any
         );
-
-        if (solution) {
-          setHealthSolution(solution);
-          const convertedSchedule = convertHealthSolutionToUserSchedule(
-            solution as any
-          );
-          setUserSchedule(convertedSchedule);
-        } else {
-          const weekStart = getCurrentWeekStart();
-          setUserSchedule({
-            user_id: userId,
-            week_start_date: weekStart,
-            workouts: [],
-            meals: [],
-          });
-        }
-      } catch (error) {
-        setScheduleError("건강 솔루션을 불러오는데 실패했습니다.");
+        setUserSchedule(convertedSchedule);
+      } else {
         const weekStart = getCurrentWeekStart();
         setUserSchedule({
           user_id: userId,
@@ -190,22 +182,30 @@ export default function HomePage() {
           workouts: [],
           meals: [],
         });
-      } finally {
-        setScheduleLoading(false);
       }
-    },
-    [getCurrentWeekStart, convertHealthSolutionToUserSchedule]
-  );
+    } catch (error) {
+      setScheduleError("건강 솔루션을 불러오는데 실패했습니다.");
+      const weekStart = getCurrentWeekStart();
+      setUserSchedule({
+        user_id: userId,
+        week_start_date: weekStart,
+        workouts: [],
+        meals: [],
+      });
+    } finally {
+      setScheduleLoading(false);
+    }
+  };
 
-  // 완료 상태를 데이터베이스에서 불러오기
-  const loadCompletionStatus = useCallback(async (userId: string) => {
+  const loadCompletionStatusRef = useRef<(userId: string) => Promise<void>>();
+  
+  loadCompletionStatusRef.current = async (userId: string) => {
     try {
       console.log("🔄 Loading completion status for user:", userId);
 
-      // 병렬로 운동과 식단 완료 상태를 불러오기
       const [completedWorkoutsData, completedMealsData] = await Promise.all([
-        completionService.getCompletedWorkouts(userId),
-        completionService.getCompletedMeals(userId),
+        completionHooks.getCompletedWorkouts(userId),
+        completionHooks.getCompletedMeals(userId),
       ]);
 
       console.log("✅ Loaded completion status:", {
@@ -217,11 +217,10 @@ export default function HomePage() {
       setCompletedMeals(completedMealsData);
     } catch (error) {
       console.error("❌ Error loading completion status:", error);
-      // 에러가 발생해도 기본 상태로 설정
       setCompletedWorkouts([]);
       setCompletedMeals([]);
     }
-  }, []);
+  };
 
   // 운동 완료 상태 변경 (DB 동기화)
   const handleWorkoutComplete = useCallback(
@@ -251,10 +250,7 @@ export default function HomePage() {
           // 완료 취소
           console.log("🔄 Marking workout as incomplete...");
           try {
-            await completionService.markWorkoutIncomplete(
-              user.id,
-              workout.originalId
-            );
+            await completionHooks.markWorkoutIncomplete(user.id, workout.originalId);
             console.log(
               "✅ Workout marked as incomplete in DB:",
               workout.exercise
@@ -274,10 +270,7 @@ export default function HomePage() {
           // 완료 처리
           console.log("🔄 Marking workout as completed...");
           try {
-            await completionService.markWorkoutCompleted(
-              user.id,
-              workout.originalId
-            );
+            await completionHooks.markWorkoutCompleted(user.id, workout.originalId);
             console.log(
               "✅ Workout marked as completed in DB:",
               workout.exercise
@@ -326,10 +319,7 @@ export default function HomePage() {
           // 완료 취소
           console.log("🔄 Marking meal as incomplete...");
           try {
-            await completionService.markMealIncomplete(
-              user.id,
-              meal.originalId
-            );
+            await completionHooks.markMealIncomplete(user.id, meal.originalId);
             console.log("✅ Meal marked as incomplete in DB:", meal.meal);
           } catch (dbError) {
             console.warn(
@@ -346,7 +336,7 @@ export default function HomePage() {
           // 완료 처리
           console.log("🔄 Marking meal as completed...");
           try {
-            await completionService.markMealCompleted(user.id, meal.originalId);
+            await completionHooks.markMealCompleted(user.id, meal.originalId);
             console.log("✅ Meal marked as completed in DB:", meal.meal);
           } catch (dbError) {
             console.warn(
@@ -376,76 +366,64 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // 로그인 상태 확인
+
+
+  // 로그인 상태 확인 및 데이터 로드
   useEffect(() => {
-    const checkAuth = async () => {
+    if (userStoreLoading) return;
+    
+    if (!isAuthenticated || !user) {
+      router.replace("/");
+      return;
+    }
+
+    if (dataLoaded) return;
+
+    const loadData = async () => {
       try {
-        console.log("🔍 Checking authentication status...");
-        console.log("Current state:", {
-          isAuthenticated,
-          user,
-          userStoreLoading,
-        });
-
-        // 로딩 중이면 대기
-        if (userStoreLoading) {
-          console.log("⏳ Still loading, waiting...");
-          return;
-        }
-
-        if (isAuthenticated && user) {
-          console.log("✅ User is authenticated:", user.email);
-          // 프로필 정보 확인
-          const { data: profileData } = await supabase
-            .from("user_profiles")
-            .select("*")
-            .eq("id", user.id)
-            .maybeSingle();
-
-          // 필수 정보가 비어있으면 프로필 페이지로 이동
-          if (
-            !profileData ||
-            !profileData.gender ||
-            !profileData.birth_date ||
-            !profileData.height_cm ||
-            !profileData.weight_kg
-          ) {
-            console.log("❌ Profile incomplete, redirecting to profile page");
-            router.replace("/profile");
-            return;
-          }
-
-          console.log(
-            "✅ Profile complete, loading health solution and completion status"
-          );
-
-          // 프로필이 완성된 경우 건강 솔루션과 완료 상태 로드
-          await Promise.all([
-            fetchHealthSolution(user.id),
-            loadCompletionStatus(user.id),
-          ]);
+        setScheduleLoading(true);
+        
+        // 건강 솔루션 로드
+        const solution = await getCompleteHealthSolution(user.id);
+        if (solution) {
+          const convertedSchedule = convertHealthSolutionToUserSchedule(solution as any);
+          setUserSchedule(convertedSchedule);
         } else {
-          console.log("❌ User not authenticated, redirecting to login");
-          router.replace("/");
-          return;
+          const weekStart = getCurrentWeekStart();
+          setUserSchedule({
+            user_id: user.id,
+            week_start_date: weekStart,
+            workouts: [],
+            meals: [],
+          });
         }
+        
+        // 완료 상태 로드
+        const [completedWorkoutsData, completedMealsData] = await Promise.all([
+          completionHooks.getCompletedWorkouts(user.id),
+          completionHooks.getCompletedMeals(user.id),
+        ]);
+        
+        setCompletedWorkouts(completedWorkoutsData);
+        setCompletedMeals(completedMealsData);
+        
       } catch (error) {
-        console.error("Auth check error:", error);
-        router.replace("/");
-        return;
+        console.error("Data load error:", error);
+        const weekStart = getCurrentWeekStart();
+        setUserSchedule({
+          user_id: user.id,
+          week_start_date: weekStart,
+          workouts: [],
+          meals: [],
+        });
+      } finally {
+        setScheduleLoading(false);
+        setDataLoaded(true);
       }
     };
 
-    // useUserStore의 상태가 설정된 후에만 체크
-    checkAuth();
-  }, [
-    isAuthenticated,
-    user,
-    userStoreLoading,
-    fetchHealthSolution,
-    loadCompletionStatus,
-    router,
-  ]);
+    loadData();
+  }, [isAuthenticated, user?.id, userStoreLoading, dataLoaded]);
 
   const handleLogin = () => {
     router.push("/");
@@ -453,10 +431,11 @@ export default function HomePage() {
 
   const handleLogout = async () => {
     try {
-      await signOut();
-      router.push("/");
+      await supabase.auth.signOut();
+      window.location.href = '/';
     } catch (error) {
       console.error("Logout error:", error);
+      window.location.href = '/';
     }
   };
 
@@ -512,30 +491,19 @@ export default function HomePage() {
 
   const weekDays = getWeekDays();
 
-  if (userStoreLoading) {
+  if (userStoreLoading || !dataLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">인증 상태 확인 중...</p>
-          <p className="text-sm text-gray-500 mt-2">잠시만 기다려주세요</p>
+          <p className="text-gray-600">로딩 중...</p>
         </div>
       </div>
     );
   }
 
-  // 인증되지 않은 경우 로그인 페이지로 리다이렉트
   if (!isAuthenticated || !user) {
-    console.log("❌ Not authenticated, redirecting to login");
-    router.replace("/");
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">로그인 페이지로 이동 중...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

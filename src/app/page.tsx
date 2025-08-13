@@ -24,15 +24,17 @@ export default function LoginPage() {
     initializeAuthListener();
   }, [initializeAuthListener]);
 
-  // 이미 로그인된 사용자는 홈으로 리다이렉트
+  // 로그인 상태 확인 후 리다이렉트 (로딩 완료 후에만)
   useEffect(() => {
-    if (isAuthenticated && user) {
-      console.log(
-        "✅ User already authenticated, redirecting to home:",
-        user.email
-      );
-      router.push("/home");
-    }
+    // 초기 로딩이 완료된 후에만 체크
+    const timer = setTimeout(() => {
+      if (isAuthenticated && user) {
+        console.log("✅ User already authenticated, redirecting to home:", user.email);
+        router.push("/home");
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [isAuthenticated, user, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
