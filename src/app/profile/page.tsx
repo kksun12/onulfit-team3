@@ -14,7 +14,6 @@ import DeleteAccount from "@/components/profile/DeleteAccount";
 
 
 export default function ProfilePage() {
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [userName, setUserName] = useState("");
   const [activeTab, setActiveTab] = useState<'view' | 'edit' | 'delete'>('view');
   const [deleting, setDeleting] = useState(false);
@@ -33,96 +32,21 @@ export default function ProfilePage() {
     deleteAccount,
   } = useProfile();
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+
 
   useEffect(() => {
-    const fetchProfile = async (user: any) => {
-      if (!user) {
-        console.log("❌ fetchProfile: user is null/undefined");
-        setError("로그인이 필요합니다.");
-        setLoading(false);
-        return;
-      }
-
-      console.log("✅ fetchProfile: user found", {
-        id: user.id,
-        email: user.email,
-        aud: user.aud,
-        role: user.role,
-      });
-
-      try {
-        const { data: profileData, error: profileError } = await supabase
-          .from("user_profiles")
-          .select("*")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (profileError) {
-          setProfile({
-            gender: "",
-            birth_date: "",
-            goal: "",
-            height_cm: "",
-            weight_kg: "",
-            activity_level: "",
-            preferred_workout_time: "",
-            available_days: [],
-            diet_type: "",
-          });
-        } else if (profileData) {
-          setProfile({
-            gender: profileData.gender || "",
-            birth_date: profileData.birth_date || "",
-            goal: profileData.goal || "",
-            height_cm: profileData.height_cm || "",
-            weight_kg: profileData.weight_kg || "",
-            activity_level: profileData.activity_level || "",
-            preferred_workout_time: profileData.preferred_workout_time || "",
-            available_days: profileData.available_days || [],
-            diet_type: profileData.diet_type || "",
-          });
-        }
-      } catch (e) {
-        console.error("❌ Profile fetch error:", e);
-        setProfile({
-          gender: "",
-          birth_date: "",
-          goal: "",
-          height_cm: "",
-          weight_kg: "",
-          activity_level: "",
-          preferred_workout_time: "",
-          available_days: [],
-          diet_type: "",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     const checkAuthStatus = async () => {
-      setLoading(true);
-      setError("");
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
 
         if (user && !error) {
           setUserName(user.user_metadata?.name || user.email || "");
-          await fetchProfile(user);
         } else {
           setError("로그인이 필요합니다.");
-          setLoading(false);
         }
       } catch (error) {
         console.error("❌ Auth check error:", error);
         setError("인증 확인 중 오류가 발생했습니다.");
-        setLoading(false);
       }
     };
 
@@ -132,26 +56,12 @@ export default function ProfilePage() {
       try {
         if (event === "SIGNED_IN" && session?.user) {
           setUserName(session.user.user_metadata?.name || session.user.email || "");
-          await fetchProfile(session.user);
         } else if (event === "SIGNED_OUT") {
           setError("로그인이 필요합니다.");
-          setProfile({
-            gender: "",
-            birth_date: "",
-            goal: "",
-            height_cm: "",
-            weight_kg: "",
-            activity_level: "",
-            preferred_workout_time: "",
-            available_days: [],
-            diet_type: "",
-          });
-          setLoading(false);
         }
       } catch (error) {
         console.error("Auth state change error:", error);
         setError("인증 상태 변경 중 오류가 발생했습니다.");
-        setLoading(false);
       }
     });
 
@@ -276,7 +186,6 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Header
-        currentTime={currentTime}
         isAuthenticated={!error}
         userName={userName}
         onLogin={handleLogin}

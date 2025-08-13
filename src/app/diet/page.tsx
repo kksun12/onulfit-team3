@@ -15,7 +15,6 @@ import EmptyMealState from "@/components/diet/EmptyMealState";
 import DietTips from "@/components/diet/DietTips";
 
 export default function DietPage() {
-  const [currentTime, setCurrentTime] = useState(new Date());
   const router = useRouter();
   const { user, userProfile, fetchUser, isAuthenticated } = useUserStore();
   const {
@@ -30,12 +29,7 @@ export default function DietPage() {
     getTotalNutrients,
   } = useDiet(user?.id);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+
 
   useEffect(() => {
     const initializeData = async () => {
@@ -95,7 +89,6 @@ export default function DietPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Header
-        currentTime={currentTime}
         isAuthenticated={isAuthenticated}
         userName={user?.user_metadata?.name || user?.email || ""}
         onLogin={handleLogin}

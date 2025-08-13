@@ -45,7 +45,6 @@ interface UserSchedule {
 }
 
 export default function HomePage() {
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -164,12 +163,7 @@ export default function HomePage() {
     [getCurrentWeekStart, convertHealthSolutionToUserSchedule]
   );
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -298,7 +292,6 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Header
-        currentTime={currentTime}
         isAuthenticated={isLoggedIn}
         userName={userName}
         onLogin={handleLogin}

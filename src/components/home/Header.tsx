@@ -1,7 +1,7 @@
 import { Activity, User, Utensils, LogOut, LogIn } from "lucide-react";
+import ClientTime from "@/components/common/ClientTime";
 
 interface HeaderProps {
-  currentTime: Date;
   isAuthenticated: boolean;
   userName: string;
   onLogin: () => void;
@@ -12,7 +12,6 @@ interface HeaderProps {
 }
 
 export default function Header({
-  currentTime,
   isAuthenticated,
   userName,
   onLogin,
@@ -21,22 +20,6 @@ export default function Header({
   onDiet,
   onHome,
 }: HeaderProps) {
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("ko-KR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      weekday: "long",
-    });
-  };
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
@@ -74,11 +57,8 @@ export default function Header({
 
           <div className="flex items-center space-x-6">
             <div className="text-right">
-              <div className="text-xs text-gray-500">
-                {formatDate(currentTime)}
-              </div>
               <div className="text-sm font-semibold text-gray-700">
-                {formatTime(currentTime)}
+                <ClientTime />
               </div>
             </div>
 
