@@ -30,6 +30,8 @@
 - [x] 홈 대시보드 (주간 스케줄 뷰)
 - [x] 건강 솔루션 서비스 (운동/식단 데이터 관리)
 - [x] 식단 페이지
+- [x] 식단 건강 입력 기능
+- [x] AI 채팅 기능
 - [x] 프로필 페이지
 - [x] 반응형 디자인
 - [x] Supabase 연동 완료
@@ -74,13 +76,17 @@ src/
 │   ├── signup/              # 회원가입 페이지
 │   ├── home/                # 홈 대시보드
 │   ├── diet/                # 식단 페이지
+│   ├── diet-health-insert/  # 식단 건강 입력 페이지
+│   ├── chat/                # AI 채팅 페이지
 │   └── profile/             # 프로필 페이지
 ├── components/
-│   └── home/                # 홈 관련 컴포넌트
-│       ├── Header.tsx
-│       ├── WelcomeSection.tsx
-│       ├── WeeklySchedule.tsx
-│       └── DayDetails.tsx
+│   ├── home/                # 홈 관련 컴포넌트
+│   │   ├── Header.tsx
+│   │   ├── WelcomeSection.tsx
+│   │   ├── WeeklySchedule.tsx
+│   │   └── DayDetails.tsx
+│   ├── chatMessageList.tsx  # 채팅 메시지 리스트
+│   └── chatTextarea.tsx     # 채팅 입력창
 ├── lib/
 │   └── supabase.ts          # Supabase 클라이언트
 ├── services/
@@ -107,6 +113,8 @@ src/
 - **로그인/회원가입**: 이메일 기반 인증
 - **홈 대시보드**: 주간 스케줄 뷰, 환영 메시지
 - **건강 솔루션**: 운동/식단 데이터 통합 관리
+- **AI 채팅**: 건강 관련 상담 및 조언 기능
+- **식단 건강 입력**: 사용자 맞춤형 식단 데이터 입력
 - **사용자 프로필**: 개인 정보 및 건강 목표 관리
 
 ## 🔧 개발 가이드
