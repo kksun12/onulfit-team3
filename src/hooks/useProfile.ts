@@ -122,6 +122,24 @@ export const useProfile = (userId?: string) => {
     }
   }, [userId]);
 
+  // 초기 로드 시 현재 사용자 프로필 가져오기
+  useEffect(() => {
+    const loadCurrentUserProfile = async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (user && !error) {
+          await fetchProfile(user.id);
+        }
+      } catch (err) {
+        console.error('Failed to load current user profile:', err);
+      }
+    };
+
+    if (!userId) {
+      loadCurrentUserProfile();
+    }
+  }, [userId]);
+
   return {
     profile,
     setProfile,

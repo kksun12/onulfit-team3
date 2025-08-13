@@ -15,6 +15,7 @@ import DeleteAccount from "@/components/profile/DeleteAccount";
 
 export default function ProfilePage() {
   const [userName, setUserName] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'view' | 'edit' | 'delete'>('view');
   const [deleting, setDeleting] = useState(false);
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function ProfilePage() {
     setSuccess,
     updateProfile,
     deleteAccount,
-  } = useProfile();
+  } = useProfile(userId || undefined);
 
 
 
@@ -41,6 +42,7 @@ export default function ProfilePage() {
 
         if (user && !error) {
           setUserName(user.user_metadata?.name || user.email || "");
+          setUserId(user.id);
         } else {
           setError("로그인이 필요합니다.");
         }
@@ -56,8 +58,10 @@ export default function ProfilePage() {
       try {
         if (event === "SIGNED_IN" && session?.user) {
           setUserName(session.user.user_metadata?.name || session.user.email || "");
+          setUserId(session.user.id);
         } else if (event === "SIGNED_OUT") {
           setError("로그인이 필요합니다.");
+          setUserId(null);
         }
       } catch (error) {
         console.error("Auth state change error:", error);
@@ -94,9 +98,8 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const success = await updateProfile(profile, user.id);
+    if (userId) {
+      const success = await updateProfile(profile, userId);
       if (success) {
         setActiveTab('view');
       }
