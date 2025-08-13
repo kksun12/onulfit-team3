@@ -3,8 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, RotateCcw } from "lucide-react";
 import ChatMessageList from "./chatMessageList";
-import axios from "axios";
-import { supabase } from "@/lib/supabase";
+import { useAuth, useChat } from "@/hooks";
 
 interface Message {
   role: "user" | "assistant";
@@ -20,11 +19,13 @@ export default function FloatingChat() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const { getUser } = useAuth();
+  const { sendMessage, loading: chatLoading } = useChat();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getUser();
         if (user) {
           setUserId(user.email || "");
           setIsAuthenticated(true);
@@ -35,7 +36,7 @@ export default function FloatingChat() {
     };
 
     checkAuth();
-  }, []);
+  }, [getUser]);
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -48,39 +49,17 @@ export default function FloatingChat() {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/diet-health-chat`,
-        {
-          messages: updatedMessages,
-          userId: userId,
-        }
-      );
-
-      if (response.data.success) {
-        const aiText = response.data.rspData;
-        const productPrefixes = [
-          "LZB", "LZP", "LPZ", "LRZ", "LDZ", "LQZ", "LOZ", "LSZ", 
-          "LIX", "LBX", "BSC", "LIO", "LIR", "LIB", "LZC"
-        ];
-        const regex = new RegExp(
-          `\\b(${productPrefixes.join("|")})[0-9\\*]+\\b`,
-          "gi"
-        );
-        const restoredText = aiText.replace(regex, (match: string) =>
-          match.replace(/\*/g, "0")
-        );
-
-        setMessages([
-          ...updatedMessages,
-          { role: "assistant", content: restoredText },
-        ]);
-      }
+      const aiResponse = await sendMessage(updatedMessages, userId);
+      setMessages([
+        ...updatedMessages,
+        { role: "assistant", content: aiResponse },
+      ]);
     } catch (err: any) {
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `❌ 오류 발생: ${err?.response?.data?.message || err.message}`,
+          content: `❌ 오류 발생: ${err.message}`,
         },
       ]);
     } finally {
@@ -137,7 +116,7 @@ export default function FloatingChat() {
             <div className="flex-1 overflow-hidden">
               <ChatMessageList
                 messages={messages}
-                loading={loading}
+                loading={loading || chatLoading}
                 chatEndRef={chatEndRef}
               />
               <div ref={chatEndRef} />
@@ -152,7 +131,7 @@ export default function FloatingChat() {
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="메시지를 입력하세요..."
                   className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-800"
-                  disabled={loading}
+                  disabled={loading || chatLoading}
                 />
                 <button
                   type="button"
@@ -167,7 +146,7 @@ export default function FloatingChat() {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || !input.trim()}
+                  disabled={loading || chatLoading || !input.trim()}
                   className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Send className="h-4 w-4" />
