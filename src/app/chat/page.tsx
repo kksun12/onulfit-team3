@@ -2,6 +2,7 @@
 
 import ChatMessageList from "@/components/chatMessageList";
 import ChatTextarea from "@/components/chatTextarea";
+import ChatHeader from "@/components/chat/ChatHeader";
 import axios from "axios";
 import { useState, useRef, useEffect } from "react";
 
@@ -133,7 +134,7 @@ export default function ChatPage() {
 
   return (
     <main className="max-w-6xl mx-auto p-5 space-y-5 text-gray-800">
-      <h1 className="text-base font-bold text-blue-600">💬 LLM 대화창</h1>
+      <ChatHeader />
 
 
       <ChatMessageList

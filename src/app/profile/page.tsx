@@ -2,19 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { User, Trash2 } from "lucide-react";
+import { User } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/home/Header";
+import ProfileSidebar from "@/components/profile/ProfileSidebar";
+import ProfileView from "@/components/profile/ProfileView";
+import ProfileEdit from "@/components/profile/ProfileEdit";
+import DeleteAccount from "@/components/profile/DeleteAccount";
 
-const GENDER_OPTIONS = [
-  { value: "male", label: "남성" },
-  { value: "female", label: "여성" },
-];
-const ACTIVITY_LEVELS = [
-  { value: "1-2", label: "주 1~2회 (가벼운 활동)" },
-  { value: "3-4", label: "주 3~4회 (보통 활동)" },
-  { value: "5+", label: "주 5회 이상 (활발한 활동)" },
-];
+
 
 export default function ProfilePage() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -262,291 +258,7 @@ export default function ProfilePage() {
     }
   };
 
-  const renderProfileView = () => {
-    return (
-      <div className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">성별</label>
-            <div className="px-4 py-3 bg-gray-50 rounded-lg text-gray-700">
-              {profile.gender === 'male' ? '남성' : profile.gender === 'female' ? '여성' : '미설정'}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">생년월일</label>
-            <div className="px-4 py-3 bg-gray-50 rounded-lg text-gray-700">
-              {profile.birth_date || '미설정'}
-            </div>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">키 (cm)</label>
-            <div className="px-4 py-3 bg-gray-50 rounded-lg text-gray-700">
-              {profile.height_cm || '미설정'}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">몸무게 (kg)</label>
-            <div className="px-4 py-3 bg-gray-50 rounded-lg text-gray-700">
-              {profile.weight_kg || '미설정'}
-            </div>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">운동량 수준</label>
-            <div className="px-4 py-3 bg-gray-50 rounded-lg text-gray-700">
-              {ACTIVITY_LEVELS.find(level => level.value === profile.activity_level)?.label || '미설정'}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">선호 운동 시간</label>
-            <div className="px-4 py-3 bg-gray-50 rounded-lg text-gray-700">
-              {profile.preferred_workout_time || '미설정'}
-            </div>
-          </div>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">운동 가능한 요일</label>
-          <div className="px-4 py-3 bg-gray-50 rounded-lg text-gray-700">
-            {profile.available_days.length > 0 ? profile.available_days.join(', ') : '미설정'}
-          </div>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">운동 목표</label>
-          <div className="px-4 py-3 bg-gray-50 rounded-lg text-gray-700">
-            {profile.diet_type || '미설정'}
-          </div>
-        </div>
-      </div>
-    );
-  };
 
-  const renderProfileEdit = () => {
-    return (
-      <form className="space-y-8" onSubmit={handleSubmit}>
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
-            ✅ {success}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">성별</label>
-            <div className="flex space-x-6">
-              {GENDER_OPTIONS.map((opt) => (
-                <label key={opt.value} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="gender"
-                    value={opt.value}
-                    checked={profile.gender === opt.value}
-                    onChange={handleChange}
-                    className="accent-blue-600 w-4 h-4"
-                  />
-                  <span className="text-gray-700">{opt.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">생년월일</label>
-            <input
-              type="date"
-              name="birth_date"
-              value={profile.birth_date}
-              onChange={handleChange}
-              className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">키 (cm)</label>
-            <input
-              type="number"
-              name="height_cm"
-              value={profile.height_cm}
-              onChange={handleChange}
-              min={0}
-              step={0.1}
-              className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">몸무게 (kg)</label>
-            <input
-              type="number"
-              name="weight_kg"
-              value={profile.weight_kg}
-              onChange={handleChange}
-              min={0}
-              step={0.1}
-              className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">운동량 수준</label>
-            <select
-              name="activity_level"
-              value={profile.activity_level}
-              onChange={handleChange}
-              className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
-            >
-              <option value="">선택</option>
-              {ACTIVITY_LEVELS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">선호 운동 시간</label>
-            <input
-              type="text"
-              name="preferred_workout_time"
-              value={profile.preferred_workout_time}
-              onChange={handleChange}
-              placeholder="예: 오전 6시, 오후 7시 등"
-              className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-3">운동 가능한 요일</label>
-          <div className="grid grid-cols-7 gap-4">
-            {["월", "화", "수", "목", "금", "토", "일"].map((day) => (
-              <label key={day} className="flex flex-col items-center space-y-2 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <input
-                  type="checkbox"
-                  name="available_days"
-                  value={day}
-                  checked={profile.available_days.includes(day)}
-                  onChange={handleChange}
-                  className="accent-blue-600 w-4 h-4"
-                />
-                <span className="text-gray-700 text-sm font-medium">{day}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-3">운동 목표</label>
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              { value: "체중감량", label: "체중감량" },
-              { value: "근육증가", label: "근육증가" },
-              { value: "건강유지", label: "건강유지" }
-            ].map((goal) => (
-              <label key={goal.value} className={`flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                profile.diet_type === goal.value
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700"
-              }`}>
-                <input
-                  type="radio"
-                  name="diet_type"
-                  value={goal.value}
-                  checked={profile.diet_type === goal.value}
-                  onChange={handleChange}
-                  className="sr-only"
-                />
-                <span className="font-medium">{goal.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={() => setActiveTab('view')}
-            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-          >
-            취소
-          </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? "저장 중..." : "저장하기"}
-          </button>
-        </div>
-      </form>
-    );
-  };
-
-  const renderDeleteAccount = () => {
-    return (
-      <div className="max-w-2xl">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
-          <h3 className="text-lg font-semibold text-red-800 mb-4">⚠️ 주의사항</h3>
-          <ul className="text-red-700 space-y-2 text-sm">
-            <li>• 회원탈퇴 시 모든 개인 데이터가 영구적으로 삭제됩니다.</li>
-            <li>• 운동 기록, 식단 정보, 프로필 등 모든 정보가 사라집니다.</li>
-            <li>• 이 작업은 되돌릴 수 없습니다.</li>
-            <li>• 동일한 이메일로 재가입이 가능합니다.</li>
-          </ul>
-        </div>
-        
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              회원탈퇴를 진행하려면 아래에 "탈퇴"를 입력해주세요.
-            </label>
-            <input
-              type="text"
-              placeholder="탈퇴"
-              className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-700"
-              onChange={(e) => {
-                const confirmButton = document.getElementById('confirm-delete') as HTMLButtonElement;
-                if (confirmButton) {
-                  confirmButton.disabled = e.target.value !== '탈퇴';
-                }
-              }}
-            />
-          </div>
-          
-          <div className="flex justify-start space-x-4 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={() => setActiveTab('view')}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-            >
-              취소
-            </button>
-            <button
-              id="confirm-delete"
-              type="button"
-              onClick={handleDeleteAccount}
-              disabled={true}
-              className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              <Trash2 className="h-4 w-4" />
-              {deleting ? "탈퇴 처리 중..." : "회원탈퇴 확인"}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   const handleLogin = () => {
     router.push("/");
@@ -626,51 +338,15 @@ export default function ProfilePage() {
       <main className="w-full px-8 py-8">
         <div className="max-w-6xl mx-auto">
           <div className="flex gap-8">
-            {/* 사이드 메뉴 */}
-            <div className="w-64 bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-fit">
-              <h3 className="text-lg font-semibold text-gray-800 mb-6">프로필 메뉴</h3>
-              <nav className="space-y-2">
-                <button
-                  onClick={() => setActiveTab('view')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === 'view'
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  프로필 보기
-                </button>
-                <button
-                  onClick={() => setActiveTab('edit')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === 'edit'
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  정보 수정
-                </button>
-                <button
-                  onClick={() => setActiveTab('delete')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === 'delete'
-                      ? 'bg-red-50 text-red-700 border border-red-200'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  회원 탈퇴
-                </button>
-              </nav>
-            </div>
+            <ProfileSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
-            {/* 메인 컨텐츠 */}
             <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 p-8">
               {activeTab === 'view' && (
                 <div>
                   <h2 className="text-2xl font-bold text-gray-800 mb-8">
                     프로필 정보
                   </h2>
-                  {renderProfileView()}
+                  <ProfileView profile={profile} />
                 </div>
               )}
               
@@ -679,7 +355,15 @@ export default function ProfilePage() {
                   <h2 className="text-2xl font-bold text-gray-800 mb-8">
                     프로필 정보 수정
                   </h2>
-                  {renderProfileEdit()}
+                  <ProfileEdit 
+                    profile={profile}
+                    onChange={handleChange}
+                    onSubmit={handleSubmit}
+                    onCancel={() => setActiveTab('view')}
+                    saving={saving}
+                    error={error}
+                    success={success}
+                  />
                 </div>
               )}
               
@@ -688,7 +372,11 @@ export default function ProfilePage() {
                   <h2 className="text-2xl font-bold text-gray-800 mb-8">
                     회원 탈퇴
                   </h2>
-                  {renderDeleteAccount()}
+                  <DeleteAccount 
+                    onDelete={handleDeleteAccount}
+                    onCancel={() => setActiveTab('view')}
+                    deleting={deleting}
+                  />
                 </div>
               )}
             </div>

@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff, Activity, User, Phone } from "lucide-react";
+import { Mail, User, Phone } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import AuthHeader from "@/components/auth/AuthHeader";
+import InputField from "@/components/auth/InputField";
+import PasswordField from "@/components/auth/PasswordField";
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -72,16 +75,10 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-6">
       <div className="max-w-md w-full space-y-10">
-        {/* 로고/헤더 */}
-        <div className="text-center">
-          <div className="mx-auto h-20 w-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mb-6 shadow-lg">
-            <Activity className="h-10 w-10 text-white" />
-          </div>
-          <h2 className="text-4xl font-bold text-gray-800 mb-3">OnulFit</h2>
-          <p className="text-lg text-gray-600 leading-relaxed">
-            건강한 루틴으로 더 나은 하루를 시작하세요
-          </p>
-        </div>
+        <AuthHeader 
+          title="OnulFit" 
+          subtitle="건강한 루틴으로 더 나은 하루를 시작하세요" 
+        />
 
         {/* 카드 */}
         <div className="bg-white rounded-3xl shadow-2xl p-10 border border-gray-100">
@@ -189,91 +186,4 @@ export default function SignupPage() {
   );
 }
 
-/* 공통 Input 컴포넌트 */
-function InputField({
-  id,
-  name,
-  label,
-  placeholder,
-  icon,
-  type = "text",
-  value,
-  onChange,
-  required,
-}: any) {
-  return (
-    <div>
-      <label
-        htmlFor={id}
-        className="block text-sm font-semibold text-gray-700 mb-3"
-      >
-        {label}
-      </label>
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          {icon}
-        </div>
-        <input
-          id={id}
-          name={name}
-          type={type}
-          required={required}
-          value={value}
-          onChange={onChange}
-          className="block w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 placeholder-gray-400 transition-all duration-200"
-          placeholder={placeholder}
-        />
-      </div>
-    </div>
-  );
-}
 
-/* 비밀번호 Input 컴포넌트 */
-function PasswordField({
-  id,
-  name,
-  label,
-  placeholder,
-  value,
-  onChange,
-  show,
-  toggle,
-  required,
-}: any) {
-  return (
-    <div>
-      <label
-        htmlFor={id}
-        className="block text-sm font-semibold text-gray-700 mb-3"
-      >
-        {label}
-      </label>
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <Lock className="h-5 w-5 text-gray-400" />
-        </div>
-        <input
-          id={id}
-          name={name}
-          type={show ? "text" : "password"}
-          required={required}
-          value={value}
-          onChange={onChange}
-          className="block w-full pl-12 pr-12 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 placeholder-gray-400 transition-all duration-200"
-          placeholder={placeholder}
-        />
-        <button
-          type="button"
-          className="absolute inset-y-0 right-0 pr-4 flex items-center"
-          onClick={toggle}
-        >
-          {show ? (
-            <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-          ) : (
-            <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-          )}
-        </button>
-      </div>
-    </div>
-  );
-}
