@@ -226,6 +226,27 @@ export default function ProfilePage() {
         setError("저장에 실패했습니다: " + upsertError.message);
       } else {
         setSuccess("프로필이 저장되었습니다.");
+        
+        // 솔루션 생성 API 호출
+        try {
+          const solutionResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/diet-health-insert`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ userId: user.email }),
+            }
+          );
+          
+          if (solutionResponse.ok) {
+            console.log('솔루션 생성 요청 성공');
+          }
+        } catch (solutionError) {
+          console.error('솔루션 생성 오류:', solutionError);
+        }
+        
         setActiveTab('view');
       }
     } catch (e) {

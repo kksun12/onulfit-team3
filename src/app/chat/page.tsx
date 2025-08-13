@@ -4,6 +4,8 @@ import ChatMessageList from "@/components/chatMessageList";
 import ChatTextarea from "@/components/chatTextarea";
 import axios from "axios";
 import { useState, useRef, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 interface Message {
   role: "user" | "assistant";
@@ -22,10 +24,34 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<string>("");
+  const [authLoading, setAuthLoading] = useState(true);
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
 
-  const userId = "hosin2004@gmail.com";
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (user && !error) {
+          setUserId(user.email || "");
+        } else {
+          router.push("/");
+          return;
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+        router.push("/");
+        return;
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -44,9 +70,7 @@ export default function ChatPage() {
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/diet-health-chat`,
         {
           messages: updatedMessages,
-          //   category,
-          userId: "hosin2004@gmail.com",
-          //   whatapSqlDTO: selectedSqlResult,
+          userId: userId,
         }
       );
       console.log("---------------------");
@@ -120,6 +144,17 @@ export default function ChatPage() {
   }, [messages]);
 
   // 카테고리 변경 시 시간 리셋 함수
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">로그인 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="max-w-6xl mx-auto p-5 space-y-5 text-gray-800">
