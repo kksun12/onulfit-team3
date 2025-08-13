@@ -98,10 +98,10 @@ export default function DietPage() {
     return currentMeals.reduce((total, meal) => {
       const nutrients = meal.meal?.nutrients || {};
       return {
-        calories: total.calories + (nutrients["칼로리"] || 0),
-        protein: total.protein + (nutrients["단백질"] || 0),
-        carbs: total.carbs + (nutrients["탄수화물"] || 0),
-        fat: total.fat + (nutrients["지방"] || 0)
+        calories: total.calories + (nutrients["calories"] || 0),
+        protein: total.protein + (nutrients["protein"] || 0),
+        carbs: total.carbs + (nutrients["carbs"] || 0),
+        fat: total.fat + (nutrients["fat"] || 0)
       };
     }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
   };
@@ -312,7 +312,7 @@ export default function DietPage() {
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-blue-600">
-                        {getNutrientValue(mealItem, "칼로리").toFixed(0)} kcal
+                        {getNutrientValue(mealItem, "calories").toFixed(0)} kcal
                       </div>
                       <div className="text-sm text-gray-500">칼로리</div>
                     </div>
@@ -323,19 +323,19 @@ export default function DietPage() {
                     <div className="grid grid-cols-3 gap-4 mb-6">
                       <div className="text-center p-3 bg-blue-50 rounded-xl">
                         <div className="text-lg font-bold text-blue-600">
-                          {getNutrientValue(mealItem, "단백질").toFixed(1)}g
+                          {getNutrientValue(mealItem, "protein").toFixed(1)}g
                         </div>
                         <div className="text-sm text-gray-600">단백질</div>
                       </div>
                       <div className="text-center p-3 bg-green-50 rounded-xl">
                         <div className="text-lg font-bold text-green-600">
-                          {getNutrientValue(mealItem, "탄수화물").toFixed(1)}g
+                          {getNutrientValue(mealItem, "carbs").toFixed(1)}g
                         </div>
                         <div className="text-sm text-gray-600">탄수화물</div>
                       </div>
                       <div className="text-center p-3 bg-yellow-50 rounded-xl">
                         <div className="text-lg font-bold text-yellow-600">
-                          {getNutrientValue(mealItem, "지방").toFixed(1)}g
+                          {getNutrientValue(mealItem, "fat").toFixed(1)}g
                         </div>
                         <div className="text-sm text-gray-600">지방</div>
                       </div>

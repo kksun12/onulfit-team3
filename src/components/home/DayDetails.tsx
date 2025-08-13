@@ -82,7 +82,7 @@ export default function DayDetails({
                       {meal.meal}
                     </h5>
                     <p className="text-sm text-green-600 mb-2">
-                      {meal.time} • {meal.portion_size}g • {meal.nutrients.칼로리}kcal
+                      {meal.time} • {meal.portion_size}g • {meal.nutrients.calories}kcal
                     </p>
                     <p className="text-xs text-gray-600 mb-3">
                       {meal.description}
@@ -91,25 +91,25 @@ export default function DayDetails({
                       <div className="bg-blue-100 px-2 py-1 rounded">
                         <span className="text-blue-700 font-medium">단백질</span>
                         <span className="text-gray-700 ml-1">
-                          {meal.nutrients.단백질}g
+                          {meal.nutrients.protein}g
                         </span>
                       </div>
                       <div className="bg-orange-100 px-2 py-1 rounded">
                         <span className="text-orange-700 font-medium">탄수화물</span>
                         <span className="text-gray-700 ml-1">
-                          {meal.nutrients.탄수화물}g
+                          {meal.nutrients.carbs}g
                         </span>
                       </div>
                       <div className="bg-purple-100 px-2 py-1 rounded">
                         <span className="text-purple-700 font-medium">지방</span>
                         <span className="text-gray-700 ml-1">
-                          {meal.nutrients.지방}g
+                          {meal.nutrients.fat}g
                         </span>
                       </div>
                       <div className="bg-green-100 px-2 py-1 rounded">
                         <span className="text-green-700 font-medium">칼로리</span>
                         <span className="text-gray-700 ml-1">
-                          {meal.nutrients.칼로리}kcal
+                          {meal.nutrients.calories}kcal
                         </span>
                       </div>
                     </div>
