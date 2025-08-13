@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, Activity } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { FaDiscord } from "react-icons/fa";
-import { supabase } from "@/lib/supabase";
+import { supabase, getRedirectUrl } from "@/lib/supabase";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -46,10 +46,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo:
-            typeof window !== "undefined"
-              ? window.location.origin + "/home"
-              : undefined,
+          redirectTo: getRedirectUrl() + "/home",
         },
       });
       if (error) setError(error.message);
