@@ -4,7 +4,6 @@ import {
   Utensils,
   LogOut,
   LogIn,
-  MessageCircle,
 } from "lucide-react";
 
 interface HeaderProps {
@@ -15,7 +14,6 @@ interface HeaderProps {
   onLogout: () => void;
   onSettings: () => void;
   onDiet: () => void;
-  onChat: () => void;
   onHome?: () => void;
 }
 
@@ -27,7 +25,6 @@ export default function Header({
   onLogout,
   onSettings,
   onDiet,
-  onChat,
   onHome,
 }: HeaderProps) {
   const formatTime = (date: Date) => {
@@ -79,13 +76,7 @@ export default function Header({
                 <span className="text-sm font-medium">식단관리</span>
               </button>
 
-              <button
-                onClick={onChat}
-                className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-              >
-                <MessageCircle className="h-4 w-4" />
-                <span className="text-sm font-medium">AI상담</span>
-              </button>
+
             </nav>
           </div>
 

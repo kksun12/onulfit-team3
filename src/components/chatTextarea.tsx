@@ -47,7 +47,7 @@ export default function ChatTextarea({
       <div className="relative">
         <textarea
           ref={textareaRef}
-          className={`w-full border-2 border-gray-200 rounded-xl px-4 py-3 bg-white shadow-sm resize-none min-h-[3rem] text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${
+          className={`w-full border-2 border-gray-200 rounded-xl pl-12 pr-4 py-3 bg-white shadow-sm resize-none min-h-[3rem] text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${
             isSQL ? "max-h-80 font-mono text-xs" : "max-h-40"
           }`}
           placeholder="운동, 식단, 건강에 대한 질문을 자유롭게 해보세요..."

@@ -162,9 +162,7 @@ export default function DietPage() {
     router.push("/home");
   };
 
-  function handleChat(): void {
-    throw new Error("Function not implemented.");
-  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -177,7 +175,6 @@ export default function DietPage() {
         onSettings={handleSettings}
         onDiet={handleDiet}
         onHome={handleHome}
-        onChat={handleChat}
       />
 
       <main className="w-full px-8 py-8">
