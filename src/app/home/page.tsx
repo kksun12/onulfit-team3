@@ -469,6 +469,10 @@ export default function HomePage() {
     router.push("/diet");
   };
 
+  const handleChat = () => {
+    router.push("/chat");
+  };
+
   const handleHome = () => {
     router.push("/home");
   };
@@ -547,6 +551,7 @@ export default function HomePage() {
         onLogout={handleLogout}
         onSettings={handleSettings}
         onDiet={handleDiet}
+        onChat={handleChat}
         onHome={handleHome}
       />
 

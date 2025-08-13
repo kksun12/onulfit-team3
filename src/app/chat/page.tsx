@@ -6,6 +6,7 @@ import axios from "axios";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { MessageCircle, ArrowLeft, Bot, User } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
@@ -33,8 +34,11 @@ export default function ChatPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+
         if (user && !error) {
           setUserId(user.email || "");
         } else {
@@ -62,10 +66,8 @@ export default function ChatPage() {
     setMessages(updatedMessages);
     setInput("");
     setLoading(true);
-    console.log("=============");
 
     try {
-      console.log(userId);
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/diet-health-chat`,
         {
@@ -73,8 +75,6 @@ export default function ChatPage() {
           userId: userId,
         }
       );
-      console.log("---------------------");
-      console.log(response.data);
 
       if (response.data.success) {
         const aiText = response.data.rspData;
@@ -107,8 +107,6 @@ export default function ChatPage() {
         const restoredText = aiText.replace(regex, (match: string) =>
           match.replace(/\*/g, "0")
         );
-
-        console.log(restoredText);
 
         setMessages([
           ...updatedMessages,
@@ -143,11 +141,9 @@ export default function ChatPage() {
     }
   }, [messages]);
 
-  // 카테고리 변경 시 시간 리셋 함수
-
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">로그인 확인 중...</p>
@@ -157,27 +153,67 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="max-w-6xl mx-auto p-5 space-y-5 text-gray-800">
-      <h1 className="text-base font-bold text-blue-600">💬 LLM 대화창</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* 헤더 */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => router.push("/home")}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5" />
+                <span className="font-medium">홈으로</span>
+              </button>
+              <div className="w-px h-6 bg-gray-300"></div>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <MessageCircle className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-800">AI 상담</h1>
+                  <p className="text-sm text-gray-600">
+                    건강한 루틴에 대해 AI와 상담해보세요
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <Bot className="h-4 w-4" />
+              <span>AI 상담사</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <ChatMessageList
-        messages={messages}
-        loading={loading}
-        chatEndRef={chatEndRef}
-      />
+      {/* 메인 콘텐츠 */}
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 p-6">
+          {/* 채팅 영역 */}
+          <ChatMessageList
+            messages={messages}
+            loading={loading}
+            chatEndRef={chatEndRef}
+          />
 
-      <div ref={chatEndRef} />
+          <div ref={chatEndRef} />
 
-      <ChatTextarea
-        input={input}
-        setInput={setInput}
-        handleSend={handleSend}
-        loading={loading}
-        onReset={() => {
-          setMessages([]);
-          setInput("");
-        }}
-      />
-    </main>
+          {/* 입력 영역 */}
+          <div className="mt-6">
+            <ChatTextarea
+              input={input}
+              setInput={setInput}
+              handleSend={handleSend}
+              loading={loading}
+              onReset={() => {
+                setMessages([]);
+                setInput("");
+              }}
+            />
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }
