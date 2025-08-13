@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { User, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/home/Header";
+import SolutionLoadingOverlay from "@/components/common/SolutionLoadingOverlay";
 
 const GENDER_OPTIONS = [
   { value: "male", label: "남성" },
@@ -20,6 +21,7 @@ export default function ProfilePage() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [creatingSolution, setCreatingSolution] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -226,27 +228,6 @@ export default function ProfilePage() {
         setError("저장에 실패했습니다: " + upsertError.message);
       } else {
         setSuccess("프로필이 저장되었습니다.");
-        
-        // 솔루션 생성 API 호출
-        try {
-          const solutionResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/diet-health-insert`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ userId: user.email }),
-            }
-          );
-          
-          if (solutionResponse.ok) {
-            console.log('솔루션 생성 요청 성공');
-          }
-        } catch (solutionError) {
-          console.error('솔루션 생성 오류:', solutionError);
-        }
-        
         setActiveTab('view');
       }
     } catch (e) {
@@ -283,9 +264,77 @@ export default function ProfilePage() {
     }
   };
 
+  const handleCreateSolution = async () => {
+    console.log('🚀 [프로필] 솔루션 생성 시작');
+    setCreatingSolution(true);
+    setError("");
+    setSuccess("");
+    
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        console.log('❌ [프로필] 인증 오류');
+        setError("로그인이 필요합니다.");
+        return;
+      }
+
+      console.log('📡 [프로필] API 호출 시작 - userId:', user.email);
+      const solutionResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/diet-health-insert`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: user.email }),
+        }
+      );
+      
+      console.log('📊 [프로필] API 응답 상태:', solutionResponse.status);
+      if (solutionResponse.ok) {
+        console.log('✅ [프로필] 솔루션 생성 성공');
+        setSuccess("새로운 솔루션이 생성되었습니다!");
+      } else {
+        console.log('❌ [프로필] 솔루션 생성 실패 - 상태:', solutionResponse.status);
+        setError("솔루션 생성에 실패했습니다.");
+      }
+    } catch (solutionError) {
+      console.error('❌ [프로필] 솔루션 생성 오류:', solutionError);
+      setError("솔루션 생성 중 오류가 발생했습니다.");
+    } finally {
+      console.log('🏁 [프로필] 솔루션 생성 완료');
+      setCreatingSolution(false);
+    }
+  };
+
   const renderProfileView = () => {
     return (
       <div className="space-y-8">
+        {/* 솔루션 생성 섹션 */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">건강 솔루션</h3>
+              <p className="text-gray-600 text-sm">현재 프로필 정보를 바탕으로 새로운 맞춤형 솔루션을 생성합니다.</p>
+            </div>
+            <button
+              onClick={handleCreateSolution}
+              disabled={creatingSolution}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
+            >
+              {creatingSolution ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  생성 중...
+                </>
+              ) : (
+                "솔루션 새로 생성"
+              )}
+            </button>
+          </div>
+        </div>
+        
+        {/* 기존 프로필 정보 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">성별</label>
@@ -633,6 +682,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <SolutionLoadingOverlay isVisible={creatingSolution} />
       <Header
         currentTime={currentTime}
         isAuthenticated={!error}
@@ -691,6 +741,16 @@ export default function ProfilePage() {
                   <h2 className="text-2xl font-bold text-gray-800 mb-8">
                     프로필 정보
                   </h2>
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-6">
+                      {error}
+                    </div>
+                  )}
+                  {success && (
+                    <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm mb-6">
+                      ✅ {success}
+                    </div>
+                  )}
                   {renderProfileView()}
                 </div>
               )}

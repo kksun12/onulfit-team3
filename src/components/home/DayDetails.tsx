@@ -241,7 +241,7 @@ export default function DayDetails({
                       </div>
                       <p className="text-sm text-green-600 mb-2">
                         {meal.time} • {meal.portion_size}g •{" "}
-                        {meal.nutrients.칼로리}kcal
+                        {meal.nutrients.calories}kcal
                       </p>
                       <p className="text-xs text-gray-600 mb-3">
                         {meal.description}
@@ -252,7 +252,7 @@ export default function DayDetails({
                             단백질
                           </span>
                           <span className="text-gray-700 ml-1">
-                            {meal.nutrients.단백질}g
+                            {meal.nutrients.protein}g
                           </span>
                         </div>
                         <div className="bg-orange-100 px-2 py-1 rounded">
@@ -260,7 +260,7 @@ export default function DayDetails({
                             탄수화물
                           </span>
                           <span className="text-gray-700 ml-1">
-                            {meal.nutrients.탄수화물}g
+                            {meal.nutrients.carbs}g
                           </span>
                         </div>
                         <div className="bg-purple-100 px-2 py-1 rounded">
@@ -268,7 +268,7 @@ export default function DayDetails({
                             지방
                           </span>
                           <span className="text-gray-700 ml-1">
-                            {meal.nutrients.지방}g
+                            {meal.nutrients.fat}g
                           </span>
                         </div>
                         <div className="bg-green-100 px-2 py-1 rounded">
@@ -276,7 +276,7 @@ export default function DayDetails({
                             칼로리
                           </span>
                           <span className="text-gray-700 ml-1">
-                            {meal.nutrients.칼로리}kcal
+                            {meal.nutrients.calories}kcal
                           </span>
                         </div>
                       </div>

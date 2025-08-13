@@ -139,10 +139,10 @@ export interface MealData {
   portion_size: number;
   description: string;
   nutrients: {
-    단백질: number;
-    탄수화물: number;
-    지방: number;
-    칼로리: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    calories: number;
   };
   originalId: string;
 }

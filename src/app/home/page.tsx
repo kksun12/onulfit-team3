@@ -30,10 +30,10 @@ export interface MealData {
   portion_size: number;
   description: string;
   nutrients: {
-    단백질: number;
-    탄수화물: number;
-    지방: number;
-    칼로리: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    calories: number;
   };
   originalId: string;
 }
@@ -136,10 +136,10 @@ export default function HomePage() {
             portion_size: sm.portion_size || 0,
             description: meal?.description || "",
             nutrients: meal?.nutrients || {
-              단백질: 0,
-              탄수화물: 0,
-              지방: 0,
-              칼로리: 0,
+              protein: 0,
+              carbs: 0,
+              fat: 0,
+              calories: 0,
             },
             originalId: sm.id,
           };
@@ -395,7 +395,6 @@ export default function HomePage() {
 
         if (isAuthenticated && user) {
           console.log("✅ User is authenticated:", user.email);
-
           // 프로필 정보 확인
           const { data: profileData } = await supabase
             .from("user_profiles")
