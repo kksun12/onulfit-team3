@@ -41,7 +41,7 @@ export default function DietPage() {
       try {
         setLoading(true);
         const meals = await getSolutionMeals(user.id);
-        
+
         // 식사 시간별로 그룹화
         const groupedMeals: MealsByTime = {};
         meals.forEach((meal) => {
@@ -53,7 +53,7 @@ export default function DietPage() {
         });
 
         setMealsByTime(groupedMeals);
-        
+
         // 첫 번째 식사 시간을 기본 선택으로 설정
         const firstMealTime = Object.keys(groupedMeals)[0];
         if (firstMealTime) {
@@ -63,9 +63,9 @@ export default function DietPage() {
         console.error("식단 데이터 로드 오류:", error);
         // 에러 시 기본 빈 데이터
         setMealsByTime({
-          "아침": [],
-          "점심": [],
-          "저녁": []
+          아침: [],
+          점심: [],
+          저녁: [],
         });
       } finally {
         setLoading(false);
@@ -139,10 +139,10 @@ export default function DietPage() {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      window.location.href = '/';
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
-      window.location.href = '/';
+      window.location.href = "/";
     }
   };
 
@@ -157,8 +157,6 @@ export default function DietPage() {
   const handleHome = () => {
     router.push("/home");
   };
-
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -310,7 +308,7 @@ export default function DietPage() {
                       </p>
                       {mealItem.portion_size && (
                         <p className="text-sm text-blue-600 font-medium">
-                          권장량: {mealItem.portion_size}인분
+                          권장량: {mealItem.portion_size}g
                         </p>
                       )}
                     </div>

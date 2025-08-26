@@ -45,6 +45,50 @@ export const useUserStore = create<UserState>((set, get) => ({
   initializeAuthListener: () => {
     console.log("🚀 Auth listener initialized");
 
+    // 초기 세션 상태를 먼저 확인
+    const initializeSession = async () => {
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+        if (session?.user && !error) {
+          console.log("✅ Initial session found:", session.user.email);
+          const appUser: AppUser = {
+            id: session.user.id,
+            email: session.user.email || "",
+            user_metadata: session.user.user_metadata,
+          };
+          set({
+            user: appUser,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          // 사용자 프로필도 함께 가져오기
+          await get().fetchUserProfile();
+        } else {
+          console.log("❌ No initial session found");
+          set({
+            user: null,
+            userProfile: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
+        }
+      } catch (error) {
+        console.error("Session initialization error:", error);
+        set({
+          user: null,
+          userProfile: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
+      }
+    };
+
+    // 즉시 실행
+    initializeSession();
+
     // Supabase 인증 상태 변화를 실시간으로 감지
     const {
       data: { subscription },
@@ -86,38 +130,6 @@ export const useUserStore = create<UserState>((set, get) => ({
           isLoading: false,
         });
       }
-    });
-
-    // 초기 세션 상태 확인 (즉시 실행)
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (session?.user && !error) {
-        console.log("✅ Initial session found:", session.user.email);
-        const appUser: AppUser = {
-          id: session.user.id,
-          email: session.user.email || "",
-          user_metadata: session.user.user_metadata,
-        };
-        set({
-          user: appUser,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      } else {
-        console.log("❌ No initial session found");
-        set({
-          user: null,
-          userProfile: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
-      }
-    }).catch(() => {
-      set({
-        user: null,
-        userProfile: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
     });
 
     // cleanup 함수 반환 (필요시 사용)
